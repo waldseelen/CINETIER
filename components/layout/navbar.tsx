@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
 import {
     Compass,
     Home,
@@ -39,12 +38,9 @@ export function Navbar() {
                 <nav className="container flex h-16 items-center justify-between">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2">
-                        <motion.div
-                            className="font-display text-2xl font-bold text-gradient-neon"
-                            whileHover={{ scale: 1.05 }}
-                        >
+                        <div className="font-display text-2xl font-bold text-gradient-neon transition-transform duration-200 hover:scale-105">
                             CineTier
-                        </motion.div>
+                        </div>
                     </Link>
 
                     {/* Desktop nav links */}
@@ -116,12 +112,7 @@ export function Navbar() {
 
                 {/* Mobile menu */}
                 {mobileMenuOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="border-t border-border bg-background p-4 md:hidden"
-                    >
+                    <div className="border-t border-border bg-background p-4 md:hidden animate-fade-in">
                         <div className="flex flex-col gap-2">
                             {navLinks.map((link) => {
                                 const isActive = pathname === link.href;
@@ -153,7 +144,7 @@ export function Navbar() {
                                 </Button>
                             </Link>
                         </div>
-                    </motion.div>
+                    </div>
                 )}
             </header>
 

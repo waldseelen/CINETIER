@@ -14,12 +14,14 @@ import { Eye, Plus, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
+import { CompactRatings } from "./rating-badges";
 
 interface PosterCardProps {
     media: MediaItem;
     size?: "sm" | "md" | "lg";
     showActions?: boolean;
     showRating?: boolean;
+    showExternalRatings?: boolean;
     isWatched?: boolean;
     isInWatchlist?: boolean;
     userRating?: number | null;
@@ -39,6 +41,7 @@ export function PosterCard({
     size = "md",
     showActions = false,
     showRating = true,
+    showExternalRatings = false,
     isWatched = false,
     isInWatchlist = false,
     userRating,
@@ -46,7 +49,13 @@ export function PosterCard({
     onWatchlistClick,
     className,
 }: PosterCardProps) {
-    const posterUrl = getPosterUrl(media.posterPath, "medium");
+    const posterUrl = media.mediaType === "anime"
+        ? media.posterPath // Anime posters are full URLs
+        : getPosterUrl(media.posterPath, "medium");
+
+    const mediaLink = media.mediaType === "anime"
+        ? `/anime/${media.tmdbId}` // tmdbId is actually malId for anime
+        : `/media/${media.mediaType}/${media.tmdbId}`;
 
     return (
         <motion.div
@@ -61,7 +70,7 @@ export function PosterCard({
             whileTap={{ scale: 0.98 }}
         >
             <Link
-                href={`/media/${media.mediaType}/${media.tmdbId}`}
+                href={mediaLink}
                 className="block h-full w-full"
             >
                 {posterUrl ? (
@@ -86,6 +95,14 @@ export function PosterCard({
                     <p className="line-clamp-2 text-xs font-medium text-white">
                         {media.title}
                     </p>
+                    {/* External ratings on hover */}
+                    {showExternalRatings && media.externalRatings && (
+                        <CompactRatings
+                            imdbRating={media.externalRatings.imdbRating}
+                            rtRating={media.externalRatings.rtRating}
+                            className="mt-1"
+                        />
+                    )}
                 </div>
 
                 {/* Rating badge */}
@@ -93,6 +110,13 @@ export function PosterCard({
                     <div className="absolute right-1 top-1 flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
                         <Star className="h-3 w-3 fill-neon text-neon" />
                         {media.voteAverage.toFixed(1)}
+                    </div>
+                )}
+
+                {/* External IMDb rating badge (always visible when available) */}
+                {showExternalRatings && media.externalRatings?.imdbRating && !showRating && (
+                    <div className="absolute right-1 top-1 flex items-center gap-0.5 rounded-md bg-amber-500/90 px-1.5 py-0.5 text-xs font-semibold text-black">
+                        {media.externalRatings.imdbRating.toFixed(1)}
                     </div>
                 )}
 

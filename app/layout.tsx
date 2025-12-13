@@ -1,4 +1,4 @@
-import { CommandPalette } from "@/components/layout/command-palette";
+import { CommandPaletteWrapper } from "@/components/layout/command-palette-wrapper";
 import { Navbar } from "@/components/layout/navbar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Metadata } from "next";
@@ -56,7 +56,7 @@ export default function RootLayout({
                             <Navbar />
                             <main className="flex-1">{children}</main>
                         </div>
-                        <CommandPalette />
+                        <CommandPaletteWrapper />
                     </TooltipProvider>
                 </Providers>
             </body>

@@ -1,13 +1,26 @@
 import type { TMDBMovie, TMDBMovieDetails, TMDBTV, TMDBTVDetails } from "@/lib/tmdb/client";
 
-// Media types
-export type MediaType = "movie" | "tv";
+// Media types - now includes anime
+export type MediaType = "movie" | "tv" | "anime";
+
+// Media source - where the data originated
+export type MediaSource = "tmdb" | "jikan";
+
+// External ratings from OMDb API
+export interface ExternalRatings {
+    imdbId: string | null;
+    imdbRating: number | null; // 1-10 scale
+    rtRating: number | null; // 0-100 percent (Rotten Tomatoes)
+    metascore: number | null; // 0-100
+    ratingsUpdatedAt: string | null;
+}
 
 export interface MediaItem {
     id: string;
     mediaId?: string; // For tier list items
     tmdbId: number;
     mediaType: MediaType;
+    mediaSource?: MediaSource;
     title: string;
     originalTitle: string;
     posterPath: string | null;
@@ -18,6 +31,27 @@ export interface MediaItem {
     genres: { id: number; name: string }[];
     globalElo: number;
     globalMatchCount: number;
+    // External ratings (optional, loaded separately)
+    externalRatings?: ExternalRatings;
+}
+
+// Anime-specific media item extension
+export interface AnimeItem extends Omit<MediaItem, "mediaType"> {
+    mediaType: "anime";
+    malId: number;
+    malScore: number | null;
+    malRank: number | null;
+    malPopularity: number | null;
+    episodes: number | null;
+    status: string;
+    airing: boolean;
+    duration: string | null;
+    rating: string | null; // Age rating
+    season: string | null;
+    year: number | null;
+    studios: Array<{ id: number; name: string }>;
+    themes: Array<{ id: number; name: string }>;
+    trailerUrl: string | null;
 }
 
 // TierItem type for tier list items

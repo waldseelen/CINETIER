@@ -1,18 +1,20 @@
 "use client";
 
+import { RatingBadges, RatingBadgesSkeleton } from "@/components/media/rating-badges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     useCreateReview,
+    useExternalRatings,
     useReviews,
     useTMDBMedia,
     useToggleWatched,
     useToggleWatchlist,
     useUpdateRating,
     useUser,
-    useUserMedia,
+    useUserMedia
 } from "@/lib/hooks/use-queries";
 import { getBackdropUrl, getPosterUrl } from "@/lib/tmdb/client";
 import { motion } from "framer-motion";
@@ -43,6 +45,10 @@ export default function MediaPage() {
     const { data: tmdbData, isLoading: tmdbLoading } = useTMDBMedia(tmdbId, type);
     const { data: userMedia } = useUserMedia(tmdbData?.db_id);
     const { data: reviews } = useReviews(tmdbData?.db_id);
+    const { data: externalRatings, isLoading: ratingsLoading } = useExternalRatings(
+        tmdbData?.db_id || null,
+        tmdbData?.imdb_id || null
+    );
 
     const toggleWatched = useToggleWatched();
     const toggleWatchlist = useToggleWatchlist();
@@ -229,6 +235,19 @@ export default function MediaPage() {
                                 <Users className="h-4 w-4" />
                                 <span>{tmdbData.vote_count?.toLocaleString()} oy</span>
                             </div>
+                        </div>
+
+                        {/* External Ratings (IMDb, RT, Metascore) */}
+                        <div className="mt-4">
+                            {ratingsLoading ? (
+                                <RatingBadgesSkeleton />
+                            ) : externalRatings && (
+                                <RatingBadges
+                                    imdbRating={externalRatings.imdbRating}
+                                    rtRating={externalRatings.rtRating}
+                                    metascore={externalRatings.metascore}
+                                />
+                            )}
                         </div>
 
                         {user && (

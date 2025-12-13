@@ -98,11 +98,11 @@ POST /api/blocks             → Kullanıcı engelle
 
 ## 💡 Güzellikler
 
-✅ **Otomatik Bildirimler** - DB trigger'ları (takip, like, yorum, yanıt)  
-✅ **OG Görsel Üretimi** - Twitter & Instagram için paylaş görseli  
-✅ **Threaded Yorumlar** - Cevapla, aç-kapa yapısı  
-✅ **Elo Algoritması** - VS sonuçlarından dinamik sıralama  
-✅ **Command Palette** - Cmd/Ctrl+K ile hızlı arama & navigasyon  
+✅ **Otomatik Bildirimler** - DB trigger'ları (takip, like, yorum, yanıt)
+✅ **OG Görsel Üretimi** - Twitter & Instagram için paylaş görseli
+✅ **Threaded Yorumlar** - Cevapla, aç-kapa yapısı
+✅ **Elo Algoritması** - VS sonuçlarından dinamik sıralama
+✅ **Command Palette** - Cmd/Ctrl+K ile hızlı arama & navigasyon
 
 ---
 

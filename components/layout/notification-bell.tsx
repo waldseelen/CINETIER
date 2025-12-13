@@ -9,6 +9,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useCurrentUser } from "@/lib/hooks/use-queries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -43,6 +44,7 @@ interface Notification {
 
 export function NotificationBell() {
     const queryClient = useQueryClient();
+    const { data: user } = useCurrentUser();
 
     const { data } = useQuery<{ notifications: Notification[]; unreadCount: number }>({
         queryKey: ["notifications"],
@@ -51,7 +53,8 @@ export function NotificationBell() {
             if (!res.ok) return { notifications: [], unreadCount: 0 };
             return res.json();
         },
-        refetchInterval: 30000, // Refetch every 30 seconds
+        refetchInterval: user ? 30000 : false, // Sadece giriş yapmışsa poll yap
+        enabled: !!user, // Kullanıcı yoksa fetch yapma
     });
 
     const markAsRead = useMutation({

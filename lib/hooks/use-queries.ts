@@ -1,7 +1,26 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import type { User } from "@supabase/supabase-js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+// ============================================
+// Current User Hook (Auth)
+// ============================================
+
+export function useCurrentUser() {
+    const supabase = createClient();
+
+    return useQuery<User | null>({
+        queryKey: ["current-user"],
+        queryFn: async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            return user;
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        gcTime: 1000 * 60 * 30, // 30 minutes
+    });
+}
 
 // ============================================
 // TMDB API Hooks
@@ -730,7 +749,11 @@ interface ActivitiesResponse {
     hasMore: boolean;
 }
 
-export function useActivities(type?: "all" | "watched" | "lists" | "reviews", forUser?: string) {
+export function useActivities(
+    type?: "all" | "watched" | "lists" | "reviews",
+    forUser?: string,
+    enabled: boolean = true
+) {
     return useQuery<ActivitiesResponse>({
         queryKey: ["activities", type || "all", forUser],
         queryFn: async () => {
@@ -743,6 +766,7 @@ export function useActivities(type?: "all" | "watched" | "lists" | "reviews", fo
             return res.json();
         },
         staleTime: 1000 * 60, // 1 minute
+        enabled, // Sadece kullanıcı giriş yapmışsa fetch yap
     });
 }
 
@@ -819,3 +843,175 @@ export function useFollowStats(userId: string) {
         enabled: !!userId,
     });
 }
+
+// ============================================
+// External Ratings Hooks
+// ============================================
+
+export function useExternalRatings(mediaId: string | null, imdbId: string | null) {
+    return useQuery({
+        queryKey: ["external-ratings", mediaId],
+        queryFn: async () => {
+            if (!mediaId) return null;
+            const params = new URLSearchParams({ mediaId });
+            if (imdbId) params.set("imdbId", imdbId);
+
+            const res = await fetch(`/api/ratings?${params}`);
+            if (!res.ok) throw new Error("Failed to fetch ratings");
+            const data = await res.json();
+            return data.data;
+        },
+        enabled: !!mediaId,
+        staleTime: 1000 * 60 * 60, // 1 hour
+    });
+}
+
+// ============================================
+// Anime Hooks
+// ============================================
+
+interface AnimeSearchResult {
+    id: number;
+    malId: number;
+    title: string;
+    posterUrl: string | null;
+    score: number | null;
+    episodes: number | null;
+    status: string;
+    year: number | null;
+    mediaType: "anime";
+}
+
+export function useAnimeSearch(query: string) {
+    return useQuery({
+        queryKey: ["anime", "search", query],
+        queryFn: async () => {
+            if (!query || query.length < 2) return { data: [] };
+            const res = await fetch(`/api/anime?action=search&q=${encodeURIComponent(query)}`);
+            if (!res.ok) throw new Error("Anime search failed");
+            return res.json();
+        },
+        enabled: query.length >= 2,
+        staleTime: 1000 * 60 * 5,
+    });
+}
+
+export function useAnimeTop(filter: string = "", page: number = 1) {
+    return useQuery({
+        queryKey: ["anime", "top", filter, page],
+        queryFn: async () => {
+            const params = new URLSearchParams({
+                action: "top",
+                page: page.toString(),
+            });
+            if (filter) params.set("filter", filter);
+
+            const res = await fetch(`/api/anime?${params}`);
+            if (!res.ok) throw new Error("Failed to fetch top anime");
+            return res.json();
+        },
+        staleTime: 1000 * 60 * 30,
+    });
+}
+
+export function useAnimeDetails(malId: number | null) {
+    return useQuery({
+        queryKey: ["anime", "details", malId],
+        queryFn: async () => {
+            if (!malId) return null;
+            const res = await fetch(`/api/anime?action=details&id=${malId}`);
+            if (!res.ok) throw new Error("Failed to fetch anime details");
+            const data = await res.json();
+            return data.data;
+        },
+        enabled: !!malId,
+        staleTime: 1000 * 60 * 60,
+    });
+}
+
+// ============================================
+// Collection Hooks
+// ============================================
+
+interface Collection {
+    id: number;
+    name: string;
+    posterPath: string | null;
+    backdropPath: string | null;
+}
+
+interface CollectionDetails extends Collection {
+    overview: string;
+    parts: Array<{
+        id: number;
+        tmdbId: number;
+        title: string;
+        posterPath: string | null;
+        releaseDate: string | null;
+        voteAverage: number;
+        mediaType: "movie";
+    }>;
+}
+
+export function useCollectionSearch(query: string) {
+    return useQuery<{ success: boolean; data: Collection[] }>({
+        queryKey: ["collections", "search", query],
+        queryFn: async () => {
+            if (!query || query.length < 2) return { success: true, data: [] };
+            const res = await fetch(`/api/collections?q=${encodeURIComponent(query)}`);
+            if (!res.ok) throw new Error("Collection search failed");
+            return res.json();
+        },
+        enabled: query.length >= 2,
+        staleTime: 1000 * 60 * 10,
+    });
+}
+
+export function useCollectionDetails(collectionId: number | null) {
+    return useQuery<{ success: boolean; data: CollectionDetails }>({
+        queryKey: ["collections", "details", collectionId],
+        queryFn: async () => {
+            if (!collectionId) return null;
+            const res = await fetch(`/api/collections?id=${collectionId}`);
+            if (!res.ok) throw new Error("Failed to fetch collection");
+            return res.json();
+        },
+        enabled: !!collectionId,
+        staleTime: 1000 * 60 * 60,
+    });
+}
+
+// ============================================
+// Unified Search Hook
+// ============================================
+
+interface UnifiedSearchResult {
+    id: number;
+    title: string;
+    posterUrl: string | null;
+    releaseDate: string | null;
+    voteAverage: number | null;
+    overview: string | null;
+    mediaType: "movie" | "tv" | "anime";
+    source: "tmdb" | "jikan";
+    episodes?: number | null;
+}
+
+export function useUnifiedSearch(query: string, types: string[] = ["movie", "tv", "anime"]) {
+    return useQuery<{ success: boolean; data: UnifiedSearchResult[]; pagination: any }>({
+        queryKey: ["unified-search", query, types.join(",")],
+        queryFn: async () => {
+            if (!query || query.length < 2) {
+                return { success: true, data: [], pagination: { page: 1, totalPages: 0, hasMore: false } };
+            }
+            const res = await fetch(
+                `/api/search/unified?q=${encodeURIComponent(query)}&types=${types.join(",")}`
+            );
+            if (!res.ok) throw new Error("Unified search failed");
+            return res.json();
+        },
+        enabled: query.length >= 2,
+        staleTime: 1000 * 60 * 5,
+    });
+}
+

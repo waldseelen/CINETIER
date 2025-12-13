@@ -1,9 +1,30 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { getPosterUrl } from "@/lib/tmdb";
 import { AnimatePresence, motion } from "framer-motion";
-import { Globe, Info, ListOrdered, Loader2, SkipForward, Swords, Trophy, User, X } from "lucide-react";
+import {
+    Calendar,
+    Filter,
+    Globe,
+    Info,
+    ListOrdered,
+    Loader2,
+    SkipForward,
+    Sparkles,
+    Swords,
+    Trophy,
+    User,
+    X,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -12,7 +33,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 interface Media {
     id: string;
     tmdb_id: number;
-    media_type: "movie" | "tv";
+    media_type: "movie" | "tv" | "anime";
     title: string;
     poster_path: string | null;
     elo: number;
@@ -29,6 +50,49 @@ interface TierListInfo {
     slug: string;
 }
 
+// Genre options for filtering
+const GENRE_OPTIONS = [
+    { value: "all", label: "Tüm Türler" },
+    { value: "28", label: "Aksiyon" },
+    { value: "35", label: "Komedi" },
+    { value: "18", label: "Drama" },
+    { value: "27", label: "Korku" },
+    { value: "878", label: "Bilim Kurgu" },
+    { value: "10749", label: "Romantik" },
+    { value: "53", label: "Gerilim" },
+    { value: "16", label: "Animasyon" },
+    { value: "99", label: "Belgesel" },
+    { value: "14", label: "Fantastik" },
+];
+
+// Year options
+const currentYear = new Date().getFullYear();
+const YEAR_OPTIONS = [
+    { value: "all", label: "Tüm Yıllar" },
+    { value: `${currentYear}`, label: `${currentYear}` },
+    { value: `${currentYear - 1}`, label: `${currentYear - 1}` },
+    { value: `${currentYear - 2}`, label: `${currentYear - 2}` },
+    { value: "2020s", label: "2020'ler" },
+    { value: "2010s", label: "2010'lar" },
+    { value: "2000s", label: "2000'ler" },
+    { value: "1990s", label: "1990'lar" },
+    { value: "classic", label: "Klasikler (1990 öncesi)" },
+];
+
+// Media type options
+const MEDIA_TYPE_OPTIONS = [
+    { value: "movie", label: "Filmler" },
+    { value: "tv", label: "Diziler" },
+    { value: "anime", label: "Animeler" },
+    { value: "all", label: "Hepsi" },
+];
+
+interface VSFilters {
+    mediaType: string;
+    genre: string;
+    year: string;
+}
+
 function VSContent() {
     const searchParams = useSearchParams();
     const listSlug = searchParams.get("list");
@@ -41,13 +105,34 @@ function VSContent() {
     const [error, setError] = useState<string | null>(null);
     const [tierListInfo, setTierListInfo] = useState<TierListInfo | null>(null);
 
+    // Filter state
+    const [filters, setFilters] = useState<VSFilters>({
+        mediaType: "movie",
+        genre: "all",
+        year: "all",
+    });
+    const [showFilters, setShowFilters] = useState(false);
+
+    const activeFilterCount = [
+        filters.mediaType !== "all" && filters.mediaType !== "movie",
+        filters.genre !== "all",
+        filters.year !== "all",
+    ].filter(Boolean).length;
+
     const fetchMatchup = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const url = listSlug
-                ? `/api/vs?scope=${scope}&mediaType=movie&list=${listSlug}`
-                : `/api/vs?scope=${scope}&mediaType=movie`;
+            const params = new URLSearchParams({
+                scope,
+                mediaType: filters.mediaType === "all" ? "movie" : filters.mediaType,
+            });
+
+            if (listSlug) params.set("list", listSlug);
+            if (filters.genre) params.set("genre", filters.genre);
+            if (filters.year) params.set("year", filters.year);
+
+            const url = `/api/vs?${params}`;
             const res = await fetch(url);
             const data = await res.json();
 
@@ -65,7 +150,7 @@ function VSContent() {
         } finally {
             setLoading(false);
         }
-    }, [scope, listSlug]);
+    }, [scope, listSlug, filters]);
 
     useEffect(() => {
         fetchMatchup();
@@ -137,9 +222,101 @@ function VSContent() {
                         <span className="text-gradient-neon">VS</span> Arena
                     </h1>
                     <p className="mt-2 text-muted-foreground">
-                        İki film arasında seç, zevkinin gerçek sıralamasını bul
+                        İki içerik arasında seç, zevkinin gerçek sıralamasını bul
                     </p>
                 </div>
+
+                {/* Filters Section */}
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                    {/* Media Type Select */}
+                    <Select
+                        value={filters.mediaType}
+                        onValueChange={(v) => setFilters({ ...filters, mediaType: v })}
+                    >
+                        <SelectTrigger className="w-36">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {MEDIA_TYPE_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    {/* Genre Filter */}
+                    <Select
+                        value={filters.genre}
+                        onValueChange={(v) => setFilters({ ...filters, genre: v })}
+                    >
+                        <SelectTrigger className="w-36">
+                            <SelectValue placeholder="Tür" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {GENRE_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    {/* Year Filter */}
+                    <Select
+                        value={filters.year}
+                        onValueChange={(v) => setFilters({ ...filters, year: v })}
+                    >
+                        <SelectTrigger className="w-36">
+                            <SelectValue placeholder="Yıl" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {YEAR_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    {/* Clear Filters */}
+                    {activeFilterCount > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                                setFilters({ mediaType: "movie", genre: "all", year: "all" })
+                            }
+                        >
+                            <X className="h-4 w-4 mr-1" />
+                            Temizle
+                        </Button>
+                    )}
+                </div>
+
+                {/* Active Filter Badges */}
+                {activeFilterCount > 0 && (
+                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                        {filters.mediaType === "anime" && (
+                            <Badge variant="secondary" className="bg-pink-500/20 text-pink-500">
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                Sadece Animeler
+                            </Badge>
+                        )}
+                        {filters.genre && (
+                            <Badge variant="secondary">
+                                <Filter className="h-3 w-3 mr-1" />
+                                {GENRE_OPTIONS.find((g) => g.value === filters.genre)?.label}
+                            </Badge>
+                        )}
+                        {filters.year && (
+                            <Badge variant="secondary">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {YEAR_OPTIONS.find((y) => y.value === filters.year)?.label}
+                            </Badge>
+                        )}
+                    </div>
+                )}
 
                 {/* List-based mode banner */}
                 {tierListInfo && (
