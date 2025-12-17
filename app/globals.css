@@ -4,6 +4,9 @@
 
 @layer base {
     :root {
+        --font-inter: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --font-space-grotesk: "Space Grotesk", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+
         /* CineTier Dark Theme - Default */
         --background: 150 38% 3%;
         --foreground: 150 100% 95%;
