@@ -28,12 +28,35 @@ cd CINETIER
 npm install
 ```
 
-### 2️⃣ Env ayarla
+### 2️⃣ Environment Değişkenlerini Ayarla
+
+1. `.env.example` dosyasını `.env` olarak kopyala:
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Gerekli: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TMDB_ACCESS_TOKEN`
+2. Gerekli API anahtarlarını ekle:
+
+#### 🔴 Zorunlu (Uygulama çalışmaz):
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
+
+#### 🟡 Önerilen (Demo modda çalışır):
+- `TMDB_ACCESS_TOKEN` - TMDB API access token ([buradan alın](https://www.themoviedb.org/settings/api))
+  - Yoksa: Demo modda 20 film + 20 dizi ile çalışır
+
+#### 🟢 İsteğe Bağlı:
+- `UPSTASH_REDIS_REST_URL` - Rate limiting için ([Upstash](https://upstash.com))
+- `UPSTASH_REDIS_REST_TOKEN` - Redis token
+- `OMDB_API_KEY` - Ek rating bilgileri için ([OMDB](https://www.omdbapi.com/apikey.aspx))
+
+**Not:** Uygulama başlatıldığında environment değişkenleri otomatik kontrol edilir ve eksik olanlar loglanır.
+
+#### 📊 Rate Limit Bilgileri:
+- **TMDB API:** 20 istek/saniye (otomatik rate limiting aktif)
+- **Jikan API:** ~2.8 istek/saniye (MyAnimeList için, API key gerektirmez)
+- **Upstash Redis:** İsteğe bağlı, gelişmiş rate limiting için
 
 ### 3️⃣ Supabase DB kur
 Supabase SQL Editor'da sırayla:

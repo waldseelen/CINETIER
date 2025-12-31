@@ -8,12 +8,14 @@ const JIKAN_BASE_URL = "https://api.jikan.moe/v4";
 
 // Rate limiting: Jikan has a limit of 3 requests per second
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 350; // 350ms between requests
+const MIN_REQUEST_INTERVAL = 350; // 350ms between requests (~2.8 req/sec to be safe)
+const MAX_RETRIES = 3;
 
-async function rateLimitedFetch<T>(url: string): Promise<T> {
+async function rateLimitedFetch<T>(url: string, retryCount = 0): Promise<T> {
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTime;
 
+    // Rate limiting: ensure minimum interval between requests
     if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
         await new Promise(resolve =>
             setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest)
@@ -22,20 +24,37 @@ async function rateLimitedFetch<T>(url: string): Promise<T> {
 
     lastRequestTime = Date.now();
 
-    const response = await fetch(url, {
-        next: { revalidate: 3600 }, // Cache for 1 hour
-    });
+    try {
+        const response = await fetch(url, {
+            next: { revalidate: 3600 }, // Cache for 1 hour
+        });
 
-    if (!response.ok) {
-        if (response.status === 429) {
-            // Rate limited, wait and retry
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            return rateLimitedFetch(url);
+        if (!response.ok) {
+            if (response.status === 429) {
+                // Rate limited - exponential backoff
+                const waitTime = Math.min(1000 * Math.pow(2, retryCount), 8000);
+                console.warn(`⏱️ Jikan Rate limit! ${waitTime}ms bekleniyor... (Deneme ${retryCount + 1}/${MAX_RETRIES})`);
+
+                if (retryCount < MAX_RETRIES) {
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                    return rateLimitedFetch(url, retryCount + 1);
+                }
+                throw new Error(`Jikan API rate limit aşıldı (${MAX_RETRIES} deneme)`);
+            }
+            throw new Error(`Jikan API error: ${response.status}`);
         }
-        throw new Error(`Jikan API error: ${response.status}`);
-    }
 
-    return response.json();
+        return response.json();
+    } catch (error) {
+        if (retryCount < MAX_RETRIES && error instanceof Error && error.message.includes('fetch')) {
+            // Network error - retry
+            const waitTime = 1000 * (retryCount + 1);
+            console.warn(`🔄 Jikan network error, ${waitTime}ms sonra yeniden deneniyor...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            return rateLimitedFetch(url, retryCount + 1);
+        }
+        throw error;
+    }
 }
 
 // ============================================

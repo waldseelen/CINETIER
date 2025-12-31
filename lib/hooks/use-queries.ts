@@ -77,7 +77,7 @@ export function useTMDBTrending(type: "movie" | "tv" | "all" = "all", timeWindow
     return useQuery({
         queryKey: ["tmdb", "trending", type, timeWindow],
         queryFn: async () => {
-            const res = await fetch(`/api/tmdb/trending?type=${type}&time_window=${timeWindow}`);
+            const res = await fetch(`/api/tmdb/trending?type=${type}&time=${timeWindow}`);
             if (!res.ok) throw new Error("Failed to fetch trending");
             return res.json();
         },

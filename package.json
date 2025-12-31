@@ -7,6 +7,7 @@
         "build": "next build",
         "start": "next start",
         "lint": "next lint",
+        "check:env": "node scripts/check-env.js",
         "db:generate": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > types/supabase.ts"
     },
     "dependencies": {
