@@ -1,4 +1,4 @@
-# 🎬 **CineTier**
+# 🎬 **CineTier** - Film & TV Tier List Builder
 
 > Film ve dizi tier listeleri yap, karşılaştır, paylaş. Topluluğun zevkini keşfet! 🍿
 
@@ -11,17 +11,24 @@
 
 ## ✨ Özellikler
 
-| 🎯 | 🆚 | 📊 |
+| 🎯 Core | 🆚 Sosyal | 📊 Analiz |
 |---|---|---|
-| **Tier List Builder** - Sürükle-bırak ile S/A/B/C/D tier'lar | **VS Modu** - İki film karşılaştır, Elo sıralaması | **Leaderboard** - En iyi oyuncuları gör |
-| 🎬 **Film & Dizi Detayı** - TMDB'den canlı veri | 💬 **Yorumlar** - Threaded yapı, cevapla | 🔔 **Bildirimler** - Takip, beğeni, yorum |
-| 👥 **Kişi Radar** - Oyuncu puanla (Acting, Charisma, Voice) | 💾 **Paylaş** - OG görsel, Twitter, link | 🎨 **Dark Mode** - Neon yeşil tema |
+| **Tier List Builder** - Sürükle-bırak ile S/A/B/C/D tier'lar | **VS Modu** - İki film karşılaştır, Elo sıralaması | **Leaderboard** - Oyuncu sıralaması |
+| **Film & Dizi Detayı** - TMDB + Jikan + OMDb verisi | **Threaded Yorumlar** - Cevapla, aç-kapa | **Elo Rating** - Dinamik sıralama |
+| **Anime Desteği** - MyAnimeList entegrasyonu | **Bildirimler** - Gerçek zamanlı güncelleme | **Radar Chart** - Oyuncu puanlaması |
+| **Kişi Radar** - Acting/Charisma/Voice puanı | **OG Görsel Üretimi** - Sosyal medya paylaşı | **Dark Mode** - Neon yeşil tema |
 
 ---
 
-## 🚀 Başla
+## 🚀 Hızlı Başlangıç
 
-### 1️⃣ Repo'yu klonla
+### Gereksinimler
+- Node.js 18+
+- npm/yarn/pnpm
+- Supabase hesabı
+- TMDB API anahtarı
+
+### 1️⃣ Repo'yu Klonla ve Kur
 ```bash
 git clone https://github.com/waldseelen/CINETIER.git
 cd CINETIER
@@ -30,114 +37,256 @@ npm install
 
 ### 2️⃣ Environment Değişkenlerini Ayarla
 
-1. `.env.example` dosyasını `.env` olarak kopyala:
+Dosya oluştur: `.env.local`
+
 ```bash
-cp .env.example .env
+# ========== ZORUNLU (Uygulama çalışmaz) ==========
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+SUPABASE_PROJECT_ID=your_project_id
+
+# ========== ÖNERILEN (API Entegrasyonları) ==========
+TMDB_API_KEY=your_tmdb_api_key
+TMDB_ACCESS_TOKEN=your_tmdb_access_token
+
+# ========== İSTEĞE BAĞLI (Opsiyonel Özellikler) ==========
+OMDB_API_KEY=your_omdb_api_key                     # Ek rating bilgileri
+UPSTASH_REDIS_REST_URL=your_redis_url              # Rate limiting
+UPSTASH_REDIS_REST_TOKEN=your_redis_token
+
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-2. Gerekli API anahtarlarını ekle:
+**API Anahtarlarını Alın:**
+- [TMDB API](https://www.themoviedb.org/settings/api) - Film/Dizi veri tabanı
+- [OMDB API](https://www.omdbapi.com/apikey.aspx) - Ek rating bilgileri
+- [Upstash](https://upstash.com) - Rate limiting (opsiyonel)
 
-#### 🔴 Zorunlu (Uygulama çalışmaz):
-- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key
-- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
+### 3️⃣ Supabase Veritabanını Kur
 
-#### 🟡 Önerilen (Demo modda çalışır):
-- `TMDB_ACCESS_TOKEN` - TMDB API access token ([buradan alın](https://www.themoviedb.org/settings/api))
-  - Yoksa: Demo modda 20 film + 20 dizi ile çalışır
+Supabase SQL Editor'da aşağıdaki migrations'ı sırayla çalıştır:
 
-#### 🟢 İsteğe Bağlı:
-- `UPSTASH_REDIS_REST_URL` - Rate limiting için ([Upstash](https://upstash.com))
-- `UPSTASH_REDIS_REST_TOKEN` - Redis token
-- `OMDB_API_KEY` - Ek rating bilgileri için ([OMDB](https://www.omdbapi.com/apikey.aspx))
+```bash
+# Option 1: El ile (Supabase Dashboard)
+# Copy-paste her migration dosyasını SQL Editor'a
 
-**Not:** Uygulama başlatıldığında environment değişkenleri otomatik kontrol edilir ve eksik olanlar loglanır.
-
-#### 📊 Rate Limit Bilgileri:
-- **TMDB API:** 20 istek/saniye (otomatik rate limiting aktif)
-- **Jikan API:** ~2.8 istek/saniye (MyAnimeList için, API key gerektirmez)
-- **Upstash Redis:** İsteğe bağlı, gelişmiş rate limiting için
-
-### 3️⃣ Supabase DB kur
-Supabase SQL Editor'da sırayla:
-```sql
--- db/migrations/001_initial_schema.sql
--- db/migrations/002_rls_policies.sql
--- db/migrations/003_person_ratings.sql
--- db/migrations/004_notifications.sql
+# Option 2: CLI (önerilir)
+supabase migration up
 ```
 
-### 4️⃣ Çalıştır
+Migrations sırası:
+1. `db/migrations/001_initial_schema.sql` - Ana schema
+2. `db/migrations/002_rls_policies.sql` - Güvenlik politikaları
+3. `db/migrations/003_person_ratings.sql` - Oyuncu puanlama
+4. `db/migrations/004_notifications.sql` - Bildirim sistemi
+5. `db/migrations/005_external_ratings_anime.sql` - Anime desteği
+
+### 4️⃣ Geliştirme Sunucusunu Başlat
+
 ```bash
 npm run dev
 ```
-→ http://localhost:3000
+
+Uygulama açılacak: **http://localhost:3000**
 
 ---
 
 ## 🛠️ Tech Stack
 
-| | |
-|---|---|
-| **Frontend** | Next.js 16 • TypeScript • Tailwind • shadcn/ui |
-| **State** | TanStack Query • Framer Motion |
-| **Backend** | Next.js API Routes • Supabase |
-| **Auth & DB** | Supabase (PostgreSQL) |
-| **API** | TMDB Trending, Search, Details |
-| **Interactions** | dnd-kit (sürükle-bırak) • Recharts (radar) |
+### Frontend
+- **Framework:** Next.js 16 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS + shadcn/ui components
+- **State:** TanStack Query (React Query) v5
+- **Animation:** Framer Motion
+- **Drag & Drop:** dnd-kit
+
+### Backend & Data
+- **API Routes:** Next.js API Routes (serverless)
+- **Database:** Supabase (PostgreSQL)
+- **Auth:** Supabase Auth (magic link, OAuth)
+- **ORM:** Direct SQL (migrations)
+
+### External APIs
+- **TMDB API** - Film/Dizi bilgisi (trending, search, details)
+- **Jikan API** - Anime bilgisi (MyAnimeList)
+- **OMDb API** - Ek rating bilgileri (IMDb, Rotten Tomatoes, Metascore)
+
+### DevTools
+- **Linting:** ESLint 9
+- **Type Checking:** TypeScript
+- **Package Manager:** npm (pnpm/yarn uyumlu)
 
 ---
 
-## 📍 Sayfalar
+## 📁 Proje Yapısı
 
-| Route | Açıklama |
-|-------|----------|
-| `/` | 🏠 Ana sayfa |
-| `/explore` | 🔍 Trending filmler & diziler |
-| `/create` | ➕ Yeni tier list oluştur |
-| `/list/[slug]` | 📋 Tier list görüntüle |
-| `/vs` | ⚔️ VS modu (karşılaştır) |
-| `/leaderboard` | 🏆 Elo sıralaması |
-| `/person/[tmdbId]` | ⭐ Kişi (oyuncu) detayı & puanla |
-| `/notifications` | 🔔 Bildirimler |
-| `/u/[username]` | 👤 Kullanıcı profili |
+```
+CINETIER/
+├── app/                          # Next.js App Router
+│   ├── layout.tsx               # Root layout
+│   ├── page.tsx                 # Ana sayfa
+│   ├── (auth)/                  # Auth sayfaları
+│   ├── api/                     # API routes
+│   │   ├── tmdb/               # TMDB entegrasyonu
+│   │   ├── anime/              # Jikan entegrasyonu
+│   │   ├── ratings/            # Kullanıcı puanlaması
+│   │   ├── vs/                 # VS modu ve Elo
+│   │   ├── notifications/      # Bildirim sistemi
+│   │   └── search/             # Unified search
+│   ├── create/                 # Tier list oluştur
+│   ├── list/[slug]/            # Tier list görüntüle
+│   ├── explore/                # Trending sayfası
+│   ├── vs/                     # VS modu UI
+│   ├── leaderboard/            # Elo sıralaması
+│   └── media/[type]/[tmdbId]/ # Film/Dizi detayı
+├── components/
+│   ├── ui/                     # shadcn/ui components
+│   ├── tier/                   # Tier list builder
+│   ├── media/                  # Media cards & details
+│   ├── social/                 # Yorumlar, bildirimler
+│   └── vs/                     # VS modu componenti
+├── lib/
+│   ├── supabase/              # Supabase client & utilities
+│   ├── tmdb/                  # TMDB API wrapper
+│   ├── jikan/                 # Jikan API wrapper
+│   ├── omdb/                  # OMDb API wrapper
+│   ├── elo/                   # Elo algoritması
+│   ├── hooks/                 # Custom React hooks
+│   ├── utils.ts               # Utility functions
+│   ├── validators.ts          # Input validation
+│   └── env-validator.ts       # Environment check
+├── db/
+│   └── migrations/            # SQL migration files
+├── public/                    # Static assets
+├── types/                     # TypeScript type definitions
+├── .env.example               # Environment template
+├── CLAUDE.md                  # Claude AI instructions
+├── AGENTS.md                  # Agent workflow docs
+├── ARCHITECTURE.md            # System architecture
+└── package.json
+```
+
+---
+
+## 📍 Sayfalar & Routes
+
+| Route | Açıklama | Auth | Note |
+|-------|----------|------|------|
+| `/` | 🏠 Ana sayfa | - | Landing page |
+| `/explore` | 🔍 Trending | - | TMDB + Jikan trending |
+| `/search` | 🔎 Arama | - | Unified search |
+| `/create` | ➕ Oluştur | ✅ | Tier list builder |
+| `/list/[slug]` | 📋 Görüntüle | - | Paylaşılan tier list |
+| `/vs` | ⚔️ VS Modu | - | Karşılaştırma |
+| `/leaderboard` | 🏆 Sıralama | - | Elo ratings |
+| `/media/[type]/[tmdbId]` | 🎬 Detay | - | Film/Dizi full info |
+| `/person/[tmdbId]` | ⭐ Oyuncu | - | Acting/Charisma ratings |
+| `/anime/[malId]` | 📺 Anime | - | Anime detayı |
+| `/user/[username]` | 👤 Profil | - | Kullanıcı sayfası |
+| `/notifications` | 🔔 Bildirim | ✅ | Gerçek zamanlı |
+| `/settings` | ⚙️ Ayarlar | ✅ | Hesap & tema |
 
 ---
 
 ## 🧬 API Endpoints
 
+### TMDB Integration
 ```
-GET  /api/tmdb/trending      → Trending filmler/diziler
-GET  /api/tmdb/search        → TMDB araması
-GET  /api/tmdb/media         → Film/Dizi detayı
-GET  /api/vs/leaderboard     → Elo sıralaması
-POST /api/notifications      → Bildirim listesi
-POST /api/person-ratings     → Kişi puan kaydet
-POST /api/reports            → İçerik şikayeti
-POST /api/blocks             → Kullanıcı engelle
+GET  /api/tmdb/trending        → Trending films/TV shows
+GET  /api/tmdb/search          → Search with filters
+GET  /api/tmdb/media           → Media details (film/dizi)
+GET  /api/tmdb/person          → Person (actor) details
 ```
+
+### Anime & Alternative Sources
+```
+GET  /api/anime                → MyAnimeList (Jikan)
+GET  /api/search/unified       → Cross-source search
+```
+
+### User Features
+```
+POST /api/ratings              → User rating save
+POST /api/person-ratings       → Actor rating (Acting/Charisma/Voice)
+POST /api/vs/leaderboard       → VS match result & Elo update
+GET  /api/notifications        → User notifications
+POST /api/blocks               → Block/Unblock user
+POST /api/reports              → Content moderation
+```
+
+---
+
+## 🔒 Güvenlik & Environment
+
+### Gerekli Environment Variables
+```
+NEXT_PUBLIC_*                  → Client-side (safe)
+SUPABASE_SERVICE_ROLE_KEY      → Server-only (secret)
+TMDB_ACCESS_TOKEN              → Server-only (secret)
+```
+
+### Validation
+Uygulama başlatıldığında `lib/env-validator.ts` otomatik kontrol eder:
+- ✅ Zorunlu variables mevcek mi?
+- ✅ Format doğru mu?
+- ⚠️ Uyarı loglanır eksikler için
+
+### Build Kontrolü
+```bash
+npm run check:env              # Manual check
+npm run build                  # Build check + deployment
+```
+
+---
+
+## 🚀 Deploy
+
+### Vercel (Önerilen)
+1. Repoyu GitHub'a push et
+2. Vercel.com'de import et
+3. Environment variables ekle
+4. Deploy!
+
+```bash
+# Command line ile
+vercel env add NEXT_PUBLIC_SUPABASE_URL
+vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+# ... diğer variables
+vercel deploy
+```
+
+### Self-Hosted
+```bash
+npm run build
+npm start                      # Production server
+```
+
+**Not:** OG image generation endpoints Edge Runtime'da çalışır (Vercel optimal)
 
 ---
 
 ## 💡 Güzellikler
 
-✅ **Otomatik Bildirimler** - DB trigger'ları (takip, like, yorum, yanıt)
-✅ **OG Görsel Üretimi** - Twitter & Instagram için paylaş görseli
+✅ **Tier List Builder** - Drag-drop ile kolay kullanım
+✅ **VS Modu** - Elo rating sistemi ile dinamik sıralama
+✅ **Multi-Source** - Film, Dizi, Anime, Kişi tek arayüzde
+✅ **Anime Desteği** - MyAnimeList entegrasyonu
+✅ **OG Görsel Üretimi** - Twitter & Instagram share ready
 ✅ **Threaded Yorumlar** - Cevapla, aç-kapa yapısı
-✅ **Elo Algoritması** - VS sonuçlarından dinamik sıralama
-✅ **Command Palette** - Cmd/Ctrl+K ile hızlı arama & navigasyon
+✅ **Gerçek Zamanlı** - Database triggers → bildirimler
+✅ **Command Palette** - Cmd/Ctrl+K navigasyon
+✅ **Dark Mode** - Neon yeşil tema
+✅ **Responsive** - Mobile, tablet, desktop
 
 ---
 
-## 📦 Deploy
+## 📚 Dokümantasyon
 
-**Vercel** en kolay yol:
-
-1. Repoyu Vercel'e import et
-2. `.env.local` değişkenlerini ekle
-3. Deploy!
-
-OG endpoint'leri Edge Runtime'da çalışır ✨
+- **[CLAUDE.md](./CLAUDE.md)** - AI geliştirme kuralları
+- **[AGENTS.md](./AGENTS.md)** - Agent workflow rehberi
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Sistem tasarımı
 
 ---
 
@@ -145,4 +294,4 @@ OG endpoint'leri Edge Runtime'da çalışır ✨
 
 MIT - Açık kaynak, kullan istediğin gibi! 🎉
 
-**[TMDB API](https://www.themoviedb.org)** kullanıyor - Atıf zorunlu ⚖️
+**Atıf zorunlu:** [TMDB API](https://www.themoviedb.org) • [Jikan API](https://jikan.moe) • [OMDb API](https://www.omdbapi.com)
