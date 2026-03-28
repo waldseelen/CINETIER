@@ -243,9 +243,7 @@ export default function MediaPage() {
                                 <RatingBadgesSkeleton />
                             ) : externalRatings && (
                                 <RatingBadges
-                                    imdbRating={externalRatings.imdbRating}
-                                    rtRating={externalRatings.rtRating}
-                                    metascore={externalRatings.metascore}
+                                    ratings={externalRatings}
                                 />
                             )}
                         </div>
