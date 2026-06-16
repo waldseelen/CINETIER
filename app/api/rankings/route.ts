@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+
 import { tmdb } from "@/lib/tmdb/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -21,14 +21,10 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get("sortBy") || "imdb";
 
     try {
-        const supabase = await createClient();
+        
 
         // Build query for cached media with ratings
-        let query = supabase
-            .from("media")
-            .select("*")
-            .eq("media_type", type)
-            .not("imdb_rating", "is", null);
+        let query = Promise.resolve({ data: null, error: null }) /* Firebase Migration TODO */;
 
         // Apply sorting
         switch (sortBy) {

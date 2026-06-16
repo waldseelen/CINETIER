@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Invalid target type" }, { status: 400 });
     }
 
-    const { data, error } = await (supabase
+    const { data, error } = await (/* supabase reference */ null
         .from("reports") as any)
         .insert({
             reporter_id: user.id,
@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -51,11 +51,7 @@ export async function GET(request: NextRequest) {
 
     // Only allow admins to view reports (check for admin role if you have one)
     // For now, users can only see their own reports
-    const { data, error } = await supabase
-        .from("reports")
-        .select("*")
-        .eq("reporter_id", user.id)
-        .order("created_at", { ascending: false });
+    const { data, error } = { data: null, error: null } /* Firebase Migration TODO */;
 
     if (error) {
         return NextResponse.json({ error: "Failed to fetch reports" }, { status: 500 });

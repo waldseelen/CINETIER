@@ -1,16 +1,8 @@
-import { updateSession } from "@/lib/supabase/middleware";
-import { type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-    // Skip middleware if Supabase env vars are not set
-    if (
-        !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-        !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    ) {
-        return;
-    }
-
-    return await updateSession(request);
+    return NextResponse.next();
 }
 
 export const config = {

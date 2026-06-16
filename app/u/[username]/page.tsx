@@ -11,7 +11,7 @@ import {
     useToggleFollow,
     useUser
 } from "@/lib/hooks/use-queries";
-import { createClient } from "@/lib/supabase/client";
+
 import { getPosterUrl } from "@/lib/tmdb";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -59,56 +59,22 @@ export default function ProfilePage({ params }: ProfilePageProps) {
         if (!profile?.id) return;
 
         const fetchUserData = async () => {
-            const supabase = createClient();
+            
 
             const [watchedRes, watchlistRes, reviewsRes] = await Promise.all([
-                supabase
-                    .from("user_media_entries")
-                    .select(`
-                        id,
-                        rating,
-                        media:media_id (
-                            id,
-                            tmdb_id,
-                            media_type,
-                            title,
-                            poster_path
-                        )
+                Promise.resolve({ data: null, error: null }) /* Firebase Migration TODO */
                     `)
                     .eq("user_id", profile.id)
                     .eq("watched", true)
                     .order("updated_at", { ascending: false })
                     .limit(21),
-                supabase
-                    .from("user_media_entries")
-                    .select(`
-                        id,
-                        media:media_id (
-                            id,
-                            tmdb_id,
-                            media_type,
-                            title,
-                            poster_path
-                        )
+                Promise.resolve({ data: null, error: null }) /* Firebase Migration TODO */
                     `)
                     .eq("user_id", profile.id)
                     .eq("watchlist", true)
                     .order("updated_at", { ascending: false })
                     .limit(21),
-                supabase
-                    .from("reviews")
-                    .select(`
-                        id,
-                        content,
-                        rating,
-                        created_at,
-                        media:media_id (
-                            id,
-                            tmdb_id,
-                            media_type,
-                            title,
-                            poster_path
-                        )
+                Promise.resolve({ data: null, error: null }) /* Firebase Migration TODO */
                     `)
                     .eq("user_id", profile.id)
                     .order("created_at", { ascending: false })

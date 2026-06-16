@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTMDBTrending } from "@/lib/hooks/use-queries";
-import { createClient } from "@/lib/supabase/client";
+
 import { getPosterUrl } from "@/lib/tmdb";
 import { AnimatePresence, motion } from "framer-motion";
 import { Film, Filter, Layers, Loader2, Search, Star, Tv } from "lucide-react";
@@ -35,21 +35,8 @@ export default function ExplorePage() {
 
     useEffect(() => {
         const fetchTierLists = async () => {
-            const supabase = createClient();
-            const { data } = await supabase
-                .from("tier_lists")
-                .select(`
-                    id,
-                    title,
-                    description,
-                    slug,
-                    media_type,
-                    like_count,
-                    created_at,
-                    profiles:user_id (
-                        username,
-                        display_name
-                    )
+            
+            const { data } = { data: null, error: null } /* Firebase Migration TODO */
                 `)
                 .eq("visibility", "public")
                 .order("like_count", { ascending: false })

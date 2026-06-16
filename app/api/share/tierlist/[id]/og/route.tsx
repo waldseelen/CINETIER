@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
@@ -27,14 +27,10 @@ export async function GET(
     }[format] || { width: 1200, height: 675 };
 
     try {
-        const supabase = await createClient();
+        
 
         // Fetch tier list with items
-        const { data: tierList, error } = await supabase
-            .from("tier_lists")
-            .select(`
-                *,
-                profiles:user_id (username, display_name, avatar_url),
+        const { data: tierList, error } = { data: null, error: null } /* Firebase Migration TODO */,
                 tier_list_items (
                     tier_key,
                     position,

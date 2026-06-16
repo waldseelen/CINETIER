@@ -25,7 +25,7 @@
 ### Gereksinimler
 - Node.js 18+
 - npm/yarn/pnpm
-- Supabase hesabı
+- Firebase hesabı
 - TMDB API anahtarı
 
 ### 1️⃣ Repo'yu Klonla ve Kur
@@ -41,10 +41,12 @@ Dosya oluştur: `.env.local`
 
 ```bash
 # ========== ZORUNLU (Uygulama çalışmaz) ==========
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
-SUPABASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 
 # ========== ÖNERILEN (API Entegrasyonları) ==========
 TMDB_API_KEY=your_tmdb_api_key
@@ -59,28 +61,14 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 **API Anahtarlarını Alın:**
+- [Firebase Console](https://console.firebase.google.com/) - Proje oluşturup Web uygulaması ekleyerek config bilgilerini alın.
 - [TMDB API](https://www.themoviedb.org/settings/api) - Film/Dizi veri tabanı
 - [OMDB API](https://www.omdbapi.com/apikey.aspx) - Ek rating bilgileri
 - [Upstash](https://upstash.com) - Rate limiting (opsiyonel)
 
-### 3️⃣ Supabase Veritabanını Kur
+### 3️⃣ Firebase Veritabanını Kur
 
-Supabase SQL Editor'da aşağıdaki migrations'ı sırayla çalıştır:
-
-```bash
-# Option 1: El ile (Supabase Dashboard)
-# Copy-paste her migration dosyasını SQL Editor'a
-
-# Option 2: CLI (önerilir)
-supabase migration up
-```
-
-Migrations sırası:
-1. `db/migrations/001_initial_schema.sql` - Ana schema
-2. `db/migrations/002_rls_policies.sql` - Güvenlik politikaları
-3. `db/migrations/003_person_ratings.sql` - Oyuncu puanlama
-4. `db/migrations/004_notifications.sql` - Bildirim sistemi
-5. `db/migrations/005_external_ratings_anime.sql` - Anime desteği
+Firebase Console'da Firestore ve Authentication servislerini aktifleştirin.
 
 ### 4️⃣ Geliştirme Sunucusunu Başlat
 
@@ -104,8 +92,8 @@ Uygulama açılacak: **http://localhost:3000**
 
 ### Backend & Data
 - **API Routes:** Next.js API Routes (serverless)
-- **Database:** Supabase (PostgreSQL)
-- **Auth:** Supabase Auth (magic link, OAuth)
+- **Database:** Firebase Firestore
+- **Auth:** Firebase Auth
 - **ORM:** Direct SQL (migrations)
 
 ### External APIs
@@ -148,7 +136,7 @@ CINETIER/
 │   ├── social/                 # Yorumlar, bildirimler
 │   └── vs/                     # VS modu componenti
 ├── lib/
-│   ├── supabase/              # Supabase client & utilities
+│   ├── firebase.ts            # Firebase config & utilities
 │   ├── tmdb/                  # TMDB API wrapper
 │   ├── jikan/                 # Jikan API wrapper
 │   ├── omdb/                  # OMDb API wrapper
@@ -223,7 +211,6 @@ POST /api/reports              → Content moderation
 ### Gerekli Environment Variables
 ```
 NEXT_PUBLIC_*                  → Client-side (safe)
-SUPABASE_SERVICE_ROLE_KEY      → Server-only (secret)
 TMDB_ACCESS_TOKEN              → Server-only (secret)
 ```
 
@@ -251,8 +238,8 @@ npm run build                  # Build check + deployment
 
 ```bash
 # Command line ile
-vercel env add NEXT_PUBLIC_SUPABASE_URL
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+vercel env add NEXT_PUBLIC_FIREBASE_API_KEY
+vercel env add NEXT_PUBLIC_FIREBASE_PROJECT_ID
 # ... diğer variables
 vercel deploy
 ```

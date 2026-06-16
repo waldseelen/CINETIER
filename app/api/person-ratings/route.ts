@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -9,26 +9,17 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "personId required" }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    
 
     // Get aggregate ratings
-    const { data: aggregate } = await supabase
-        .from("person_aggregate_ratings")
-        .select("*")
-        .eq("person_id", personId)
-        .single();
+    const { data: aggregate } = { data: null, error: null } /* Firebase Migration TODO */;
 
     // Get current user's rating
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
     let userRating = null;
 
     if (user) {
-        const { data } = await supabase
-            .from("person_ratings")
-            .select("*")
-            .eq("person_id", personId)
-            .eq("user_id", user.id)
-            .single();
+        const { data } = { data: null, error: null } /* Firebase Migration TODO */;
         userRating = data;
     }
 
@@ -46,8 +37,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -60,7 +51,7 @@ export async function POST(request: NextRequest) {
     let dbPersonId = personId;
     if (tmdbId && !personId) {
         // Upsert person
-        const { data: person, error: personError } = await (supabase
+        const { data: person, error: personError } = await (/* supabase reference */ null
             .from("persons") as any)
             .upsert({
                 tmdb_id: tmdbId,
@@ -77,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Upsert rating
-    const { data, error } = await (supabase
+    const { data, error } = await (/* supabase reference */ null
         .from("person_ratings") as any)
         .upsert({
             user_id: user.id,

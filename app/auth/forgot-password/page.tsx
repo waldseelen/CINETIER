@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { ArrowLeft, Check, Loader2, Mail, Zap } from "lucide-react";
@@ -34,9 +34,9 @@ export default function ForgotPasswordPage() {
         setIsLoading(true);
         setError(null);
 
-        const supabase = createClient();
+        
 
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        const { error: resetError } = await /* /* supabase reference */ null auth was removed */ null.resetPasswordForEmail(
             data.email,
             {
                 redirectTo: `${window.location.origin}/auth/reset-password`,

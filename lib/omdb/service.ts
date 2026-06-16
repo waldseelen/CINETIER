@@ -2,7 +2,7 @@
  * OMDb Service - External Ratings with Supabase Caching
  */
 
-import { createClient } from "@/lib/supabase/server";
+
 import { fetchOMDbRatings } from "./client";
 
 const CACHE_DURATION_DAYS = 7;
@@ -36,14 +36,10 @@ export async function fetchExternalRatings(
     mediaId: string,
     imdbId: string | null
 ): Promise<ExternalRatings> {
-    const supabase = await createClient();
+    
 
     // Check existing cache in database
-    const { data: mediaData, error } = await supabase
-        .from("media")
-        .select("imdb_id, imdb_rating, rt_rating, metascore, ratings_updated_at")
-        .eq("id", mediaId)
-        .single() as any;
+    const { data: mediaData, error } = { data: null, error: null } /* Firebase Migration TODO */ as any;
 
     if (error) {
         console.error("Error fetching media for ratings:", error);
@@ -93,7 +89,7 @@ export async function fetchExternalRatings(
                 metascore: omdbRatings.metascore,
                 ratings_updated_at: new Date().toISOString(),
             };
-            await (supabase as any).from("media").update(updateData).eq("id", mediaId);
+            await (/* supabase reference */ null as any).from("media").update(updateData).eq("id", mediaId);
         } catch (err) {
             console.error("Error updating ratings:", err);
         }
@@ -153,16 +149,12 @@ export async function batchFetchExternalRatings(
 export async function getMediaNeedingRatingsRefresh(
     limit = 50
 ): Promise<Array<{ id: string; imdbId: string | null }>> {
-    const supabase = await createClient();
+    
 
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - CACHE_DURATION_DAYS);
 
-    const { data, error } = await supabase
-        .from("media")
-        .select("id, imdb_id")
-        .not("imdb_id", "is", null)
-        .or(`ratings_updated_at.is.null,ratings_updated_at.lt.${cutoffDate.toISOString()}`)
+    const { data, error } = { data: null, error: null } /* Firebase Migration TODO */}`)
         .limit(limit) as any;
 
     if (error) {

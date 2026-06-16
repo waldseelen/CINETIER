@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+
 import { NextRequest, NextResponse } from "next/server";
 
 // Block a user
 export async function POST(request: NextRequest) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Cannot block yourself" }, { status: 400 });
     }
 
-    const { error } = await (supabase
+    const { error } = await (/* supabase reference */ null
         .from("blocks") as any)
         .insert({
             blocker_id: user.id,
@@ -38,19 +38,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Also unfollow if following
-    await supabase
-        .from("follows")
-        .delete()
-        .eq("follower_id", user.id)
-        .eq("following_id", targetUserId);
+    { data: null, error: null } /* Firebase Migration TODO */;
 
     return NextResponse.json({ success: true });
 }
 
 // Unblock a user
 export async function DELETE(request: NextRequest) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -63,11 +59,7 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: "targetUserId required" }, { status: 400 });
     }
 
-    const { error } = await supabase
-        .from("blocks")
-        .delete()
-        .eq("blocker_id", user.id)
-        .eq("blocked_id", targetUserId);
+    const { error } = { data: null, error: null } /* Firebase Migration TODO */;
 
     if (error) {
         return NextResponse.json({ error: "Failed to unblock user" }, { status: 500 });
@@ -78,23 +70,14 @@ export async function DELETE(request: NextRequest) {
 
 // Get blocked users
 export async function GET(request: NextRequest) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data, error } = await supabase
-        .from("blocks")
-        .select(`
-            blocked_id,
-            created_at,
-            profiles:blocked_id (
-                username,
-                display_name,
-                avatar_url
-            )
+    const { data, error } = { data: null, error: null } /* Firebase Migration TODO */
         `)
         .eq("blocker_id", user.id)
         .order("created_at", { ascending: false });

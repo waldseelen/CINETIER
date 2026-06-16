@@ -2,7 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
+import { auth, db } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, signInWithPopup, updateProfile } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { Check, Eye, EyeOff, Loader2, Lock, Mail, User, X, Zap } from "lucide-react";
@@ -80,53 +82,51 @@ export default function SignupPage() {
         setIsLoading(true);
         setError(null);
 
-        const supabase = createClient();
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+            const user = userCredential.user;
+            
+            await updateProfile(user, { displayName: data.username });
+            
+            await setDoc(doc(db, "profiles", user.uid), {
+                username: data.username,
+                email: data.email,
+                created_at: new Date().toISOString()
+            });
+            
+            await setDoc(doc(db, "usernames", data.username.toLowerCase()), {
+                uid: user.uid
+            });
 
-        // Sign up with Supabase Auth
-        const { error: authError } = await supabase.auth.signUp({
-            email: data.email,
-            password: data.password,
-            options: {
-                data: {
-                    username: data.username.toLowerCase(),
-                    display_name: data.username,
-                },
-                emailRedirectTo: `${window.location.origin}/auth/callback`,
-            },
-        });
-
-        if (authError) {
-            setError(
-                authError.message === "User already registered"
-                    ? "Bu e-posta zaten kayıtlı"
-                    : authError.message
-            );
+            router.push("/");
+            router.refresh();
+        } catch (authError: any) {
+            setError(authError.message);
             setIsLoading(false);
             return;
         }
-
-        // Redirect to verification page
-        router.push("/auth/verify");
     };
 
     const handleGoogleSignup = async () => {
-        const supabase = createClient();
-        await supabase.auth.signInWithOAuth({
-            provider: "google",
-            options: {
-                redirectTo: `${window.location.origin}/auth/callback?signup=true`,
-            },
-        });
+        const provider = new GoogleAuthProvider();
+        try {
+            await signInWithPopup(auth, provider);
+            router.push("/");
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const handleGithubSignup = async () => {
-        const supabase = createClient();
-        await supabase.auth.signInWithOAuth({
-            provider: "github",
-            options: {
-                redirectTo: `${window.location.origin}/auth/callback?signup=true`,
-            },
-        });
+        const provider = new GithubAuthProvider();
+        try {
+            await signInWithPopup(auth, provider);
+            router.push("/");
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     return (

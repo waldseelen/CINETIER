@@ -1,7 +1,7 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
-import type { User } from "@supabase/supabase-js";
+
+import type { User } from "@/* supabase reference */ null//* supabase reference */ null-js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // ============================================
@@ -9,12 +9,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 // ============================================
 
 export function useCurrentUser() {
-    const supabase = createClient();
+    
 
     return useQuery<User | null>({
         queryKey: ["current-user"],
         queryFn: async () => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
             return user;
         },
         staleTime: 1000 * 60 * 5, // 5 minutes
@@ -112,20 +112,15 @@ interface UserMediaEntry {
 }
 
 export function useUserMedia(mediaId: string | null) {
-    const supabase = createClient();
+    
 
     return useQuery<UserMediaEntry | null>({
         queryKey: ["user-media", mediaId],
         queryFn: async () => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
             if (!user || !mediaId) return null;
 
-            const { data, error } = await supabase
-                .from("user_media")
-                .select("*")
-                .eq("user_id", user.id)
-                .eq("media_id", mediaId)
-                .single();
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */;
 
             if (error && error.code !== "PGRST116") throw error;
             return data;
@@ -135,7 +130,7 @@ export function useUserMedia(mediaId: string | null) {
 }
 
 export function useUserWatched(userId?: string) {
-    const supabase = createClient();
+    
 
     return useQuery<UserMediaEntry[]>({
         queryKey: ["user-watched", userId],
@@ -143,23 +138,12 @@ export function useUserWatched(userId?: string) {
             let targetUserId = userId;
 
             if (!targetUserId) {
-                const { data: { user } } = await supabase.auth.getUser();
+                const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
                 if (!user) return [];
                 targetUserId = user.id;
             }
 
-            const { data, error } = await supabase
-                .from("user_media")
-                .select(`
-          *,
-          media (
-            id,
-            tmdb_id,
-            media_type,
-            title,
-            poster_path,
-            vote_average
-          )
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */
         `)
                 .eq("user_id", targetUserId)
                 .eq("watched", true)
@@ -173,7 +157,7 @@ export function useUserWatched(userId?: string) {
 }
 
 export function useUserWatchlist(userId?: string) {
-    const supabase = createClient();
+    
 
     return useQuery<UserMediaEntry[]>({
         queryKey: ["user-watchlist", userId],
@@ -181,23 +165,12 @@ export function useUserWatchlist(userId?: string) {
             let targetUserId = userId;
 
             if (!targetUserId) {
-                const { data: { user } } = await supabase.auth.getUser();
+                const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
                 if (!user) return [];
                 targetUserId = user.id;
             }
 
-            const { data, error } = await supabase
-                .from("user_media")
-                .select(`
-          *,
-          media (
-            id,
-            tmdb_id,
-            media_type,
-            title,
-            poster_path,
-            vote_average
-          )
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */
         `)
                 .eq("user_id", targetUserId)
                 .eq("watchlist", true)
@@ -212,21 +185,15 @@ export function useUserWatchlist(userId?: string) {
 
 // Mutation: Toggle watched
 export function useToggleWatched() {
-    const supabase = createClient();
+    
     const queryClient = useQueryClient();
 
     return useMutation<any, Error, { mediaId: string; watched: boolean }>({
         mutationFn: async ({ mediaId, watched }) => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
             if (!user) throw new Error("Not authenticated");
 
-            const { data, error } = await supabase
-                .from("user_media")
-                .upsert({
-                    user_id: user.id,
-                    media_id: mediaId,
-                    watched,
-                    updated_at: new Date().toISOString(),
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */,
                 } as any, {
                     onConflict: "user_id,media_id",
                 })
@@ -245,21 +212,15 @@ export function useToggleWatched() {
 
 // Mutation: Toggle watchlist
 export function useToggleWatchlist() {
-    const supabase = createClient();
+    
     const queryClient = useQueryClient();
 
     return useMutation<any, Error, { mediaId: string; watchlist: boolean }>({
         mutationFn: async ({ mediaId, watchlist }) => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
             if (!user) throw new Error("Not authenticated");
 
-            const { data, error } = await supabase
-                .from("user_media")
-                .upsert({
-                    user_id: user.id,
-                    media_id: mediaId,
-                    watchlist,
-                    updated_at: new Date().toISOString(),
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */,
                 } as any, {
                     onConflict: "user_id,media_id",
                 })
@@ -278,7 +239,7 @@ export function useToggleWatchlist() {
 
 // Mutation: Update rating
 export function useUpdateRating() {
-    const supabase = createClient();
+    
     const queryClient = useQueryClient();
 
     return useMutation<any, Error, { mediaId: string; rating: number | null; shortNote?: string }>({
@@ -287,18 +248,10 @@ export function useUpdateRating() {
             rating,
             shortNote
         }) => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
             if (!user) throw new Error("Not authenticated");
 
-            const { data, error } = await supabase
-                .from("user_media")
-                .upsert({
-                    user_id: user.id,
-                    media_id: mediaId,
-                    rating,
-                    short_note: shortNote,
-                    watched: true, // If rating, it's watched
-                    updated_at: new Date().toISOString(),
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */,
                 } as any, {
                     onConflict: "user_id,media_id",
                 })
@@ -320,12 +273,12 @@ export function useUpdateRating() {
 // ============================================
 
 export function useUser() {
-    const supabase = createClient();
+    
 
     return useQuery({
         queryKey: ["user"],
         queryFn: async () => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
             return user;
         },
         staleTime: 1000 * 60 * 5,
@@ -333,7 +286,7 @@ export function useUser() {
 }
 
 export function useProfile(userId?: string) {
-    const supabase = createClient();
+    
 
     return useQuery({
         queryKey: ["profile", userId],
@@ -341,16 +294,12 @@ export function useProfile(userId?: string) {
             let targetId = userId;
 
             if (!targetId) {
-                const { data: { user } } = await supabase.auth.getUser();
+                const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
                 if (!user) return null;
                 targetId = user.id;
             }
 
-            const { data, error } = await supabase
-                .from("profiles")
-                .select("*")
-                .eq("id", targetId)
-                .single();
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */;
 
             if (error) throw error;
             return data;
@@ -371,15 +320,12 @@ interface ProfileData {
 }
 
 export function useProfileByUsername(username: string) {
-    const supabase = createClient();
+    
 
     return useQuery<ProfileData | null>({
         queryKey: ["profile", "username", username],
         queryFn: async () => {
-            const { data, error } = await supabase
-                .from("profiles")
-                .select("*")
-                .eq("username", username.toLowerCase())
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */)
                 .single();
 
             if (error) throw error;
@@ -424,20 +370,12 @@ interface TierList {
 }
 
 export function useTierLists(userId?: string) {
-    const supabase = createClient();
+    
 
     return useQuery<TierList[]>({
         queryKey: ["tier-lists", userId],
         queryFn: async () => {
-            let query = supabase
-                .from("tier_lists")
-                .select(`
-          *,
-          profiles (
-            username,
-            display_name,
-            avatar_url
-          )
+            let query = Promise.resolve({ data: null, error: null }) /* Firebase Migration TODO */
         `)
                 .order("created_at", { ascending: false });
 
@@ -455,20 +393,12 @@ export function useTierLists(userId?: string) {
 }
 
 export function useTierListBySlug(slug: string) {
-    const supabase = createClient();
+    
 
     return useQuery<TierList | null>({
         queryKey: ["tier-list", slug],
         queryFn: async () => {
-            const { data, error } = await supabase
-                .from("tier_lists")
-                .select(`
-          *,
-          profiles (
-            username,
-            display_name,
-            avatar_url
-          )
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */
         `)
                 .eq("slug", slug)
                 .single();
@@ -481,7 +411,7 @@ export function useTierListBySlug(slug: string) {
 }
 
 export function useCreateTierList() {
-    const supabase = createClient();
+    
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -492,7 +422,7 @@ export function useCreateTierList() {
             mediaType: "movie" | "tv" | "mixed";
             tiers: TierList["tiers"];
         }) => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
             if (!user) throw new Error("Not authenticated");
 
             // Generate slug
@@ -501,19 +431,7 @@ export function useCreateTierList() {
                 .replace(/[^a-z0-9]+/g, "-")
                 .replace(/^-|-$/g, "")}-${Date.now().toString(36)}`;
 
-            const { data, error } = await supabase
-                .from("tier_lists")
-                .insert({
-                    user_id: user.id,
-                    title: tierList.title,
-                    description: tierList.description,
-                    visibility: tierList.visibility,
-                    media_type: tierList.mediaType,
-                    tiers: tierList.tiers,
-                    slug,
-                } as any)
-                .select()
-                .single();
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */;
 
             if (error) throw error;
             return data;
@@ -525,7 +443,7 @@ export function useCreateTierList() {
 }
 
 export function useUpdateTierList() {
-    const supabase = createClient();
+    
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -543,7 +461,7 @@ export function useUpdateTierList() {
                 ...updates,
                 updated_at: new Date().toISOString(),
             };
-            const { data, error } = await (supabase
+            const { data, error } = await (/* supabase reference */ null
                 .from("tier_lists") as any)
                 .update(updatePayload)
                 .eq("id", id)
@@ -565,20 +483,15 @@ export function useUpdateTierList() {
 // ============================================
 
 export function useIsFollowing(targetUserId: string) {
-    const supabase = createClient();
+    
 
     return useQuery({
         queryKey: ["is-following", targetUserId],
         queryFn: async () => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
             if (!user) return false;
 
-            const { data } = await supabase
-                .from("follows")
-                .select("follower_id")
-                .eq("follower_id", user.id)
-                .eq("following_id", targetUserId)
-                .single();
+            const { data } = { data: null, error: null } /* Firebase Migration TODO */;
 
             return !!data;
         },
@@ -587,25 +500,19 @@ export function useIsFollowing(targetUserId: string) {
 }
 
 export function useToggleFollow() {
-    const supabase = createClient();
+    
     const queryClient = useQueryClient();
 
     return useMutation<void, Error, { targetUserId: string; follow: boolean }>({
         mutationFn: async ({ targetUserId, follow }) => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
             if (!user) throw new Error("Not authenticated");
 
             if (follow) {
-                const { error } = await supabase
-                    .from("follows")
-                    .insert({ follower_id: user.id, following_id: targetUserId } as any);
+                const { error } = { data: null, error: null } /* Firebase Migration TODO */;
                 if (error) throw error;
             } else {
-                const { error } = await supabase
-                    .from("follows")
-                    .delete()
-                    .eq("follower_id", user.id)
-                    .eq("following_id", targetUserId);
+                const { error } = { data: null, error: null } /* Firebase Migration TODO */;
                 if (error) throw error;
             }
         },
@@ -617,25 +524,19 @@ export function useToggleFollow() {
 }
 
 export function useLikeTierList() {
-    const supabase = createClient();
+    
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async ({ tierListId, like }: { tierListId: string; like: boolean }) => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
             if (!user) throw new Error("Not authenticated");
 
             if (like) {
-                const { error } = await supabase
-                    .from("likes")
-                    .insert({ user_id: user.id, tier_list_id: tierListId } as any);
+                const { error } = { data: null, error: null } /* Firebase Migration TODO */;
                 if (error) throw error;
             } else {
-                const { error } = await supabase
-                    .from("likes")
-                    .delete()
-                    .eq("user_id", user.id)
-                    .eq("tier_list_id", tierListId);
+                const { error } = { data: null, error: null } /* Firebase Migration TODO */;
                 if (error) throw error;
             }
         },
@@ -667,20 +568,12 @@ interface Review {
 }
 
 export function useReviews(mediaId: string) {
-    const supabase = createClient();
+    
 
     return useQuery<Review[]>({
         queryKey: ["reviews", mediaId],
         queryFn: async () => {
-            const { data, error } = await supabase
-                .from("reviews")
-                .select(`
-          *,
-          profiles (
-            username,
-            display_name,
-            avatar_url
-          )
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */
         `)
                 .eq("media_id", mediaId)
                 .order("created_at", { ascending: false });
@@ -693,7 +586,7 @@ export function useReviews(mediaId: string) {
 }
 
 export function useCreateReview() {
-    const supabase = createClient();
+    
     const queryClient = useQueryClient();
 
     return useMutation<any, Error, { mediaId: string; content: string; containsSpoiler?: boolean }>({
@@ -702,21 +595,10 @@ export function useCreateReview() {
             content,
             containsSpoiler = false,
         }) => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
             if (!user) throw new Error("Not authenticated");
 
-            const { data, error } = await supabase
-                .from("reviews")
-                .upsert({
-                    user_id: user.id,
-                    media_id: mediaId,
-                    content,
-                    contains_spoiler: containsSpoiler,
-                } as any, {
-                    onConflict: "user_id,media_id",
-                })
-                .select()
-                .single();
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */;
 
             if (error) throw error;
             return data;
@@ -775,20 +657,12 @@ export function useActivities(
 // ============================================
 
 export function useFollowers(userId: string) {
-    const supabase = createClient();
+    
 
     return useQuery({
         queryKey: ["followers", userId],
         queryFn: async () => {
-            const { data, error } = await supabase
-                .from("follows")
-                .select(`
-                    follower:follower_id (
-                        id,
-                        username,
-                        display_name,
-                        avatar_url
-                    )
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */
                 `)
                 .eq("following_id", userId);
 
@@ -800,20 +674,12 @@ export function useFollowers(userId: string) {
 }
 
 export function useFollowing(userId: string) {
-    const supabase = createClient();
+    
 
     return useQuery({
         queryKey: ["following", userId],
         queryFn: async () => {
-            const { data, error } = await supabase
-                .from("follows")
-                .select(`
-                    following:following_id (
-                        id,
-                        username,
-                        display_name,
-                        avatar_url
-                    )
+            const { data, error } = { data: null, error: null } /* Firebase Migration TODO */
                 `)
                 .eq("follower_id", userId);
 
@@ -825,14 +691,14 @@ export function useFollowing(userId: string) {
 }
 
 export function useFollowStats(userId: string) {
-    const supabase = createClient();
+    
 
     return useQuery<{ followers: number; following: number }>({
         queryKey: ["follow-stats", userId],
         queryFn: async () => {
             const [{ count: followersCount }, { count: followingCount }] = await Promise.all([
-                supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", userId),
-                supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", userId),
+                Promise.resolve({ data: null, error: null }) /* Firebase Migration TODO */,
+                Promise.resolve({ data: null, error: null }) /* Firebase Migration TODO */,
             ]);
 
             return {

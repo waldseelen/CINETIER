@@ -15,7 +15,7 @@ const ENV_CONFIGS: EnvConfig[] = [
         name: "Supabase URL",
         key: "NEXT_PUBLIC_SUPABASE_URL",
         required: true,
-        description: "Supabase project URL - https://supabase.com"
+        description: "Supabase project URL - https:///* supabase reference */ null.com"
     },
     {
         name: "Supabase Anon Key",

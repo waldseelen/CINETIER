@@ -1,3 +1,17 @@
+import { Redis } from '@upstash/redis';
+
+let redis: Redis | null = null;
+try {
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+        redis = new Redis({
+            url: process.env.UPSTASH_REDIS_REST_URL,
+            token: process.env.UPSTASH_REDIS_REST_TOKEN,
+        });
+    }
+} catch (error) {
+    console.error("Failed to initialize Upstash Redis", error);
+}
+
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
 
@@ -40,24 +54,71 @@ class TMDBClient {
         this.accessToken = process.env.TMDB_ACCESS_TOKEN || "";
     }
 
-    private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    private async fetch<T>(endpoint: string, options?: RequestInit, retryCount = 0, schema?: any): Promise<T> {
         const url = `${TMDB_BASE_URL}${endpoint}`;
+        const cacheKey = `tmdb:${endpoint}`;
 
-        const response = await fetch(url, {
-            ...options,
-            headers: {
-                Authorization: `Bearer ${this.accessToken}`,
-                "Content-Type": "application/json",
-                ...options?.headers,
-            },
-            next: { revalidate: 3600 }, // Cache for 1 hour
-        });
-
-        if (!response.ok) {
-            throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+        if (redis && options?.method !== 'POST') {
+            try {
+                const cached = await redis.get<T>(cacheKey);
+                if (cached) return cached;
+            } catch (error) {
+                console.warn("Redis cache read error", error);
+            }
         }
 
-        return response.json();
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                    "Content-Type": "application/json",
+                    ...options?.headers,
+                },
+                next: { revalidate: 3600 }, // Cache for 1 hour
+            });
+
+            if (!response.ok) {
+                if (response.status === 429 && retryCount < 3) {
+                    const retryAfter = response.headers.get("Retry-After");
+                    const waitTime = retryAfter ? parseInt(retryAfter, 10) * 1000 : Math.min(1000 * Math.pow(2, retryCount), 8000);
+                    console.warn(`TMDB Rate limit hit. Retrying in ${waitTime}ms... (Attempt ${retryCount + 1}/3)`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                    return this.fetch<T>(endpoint, options, retryCount + 1, schema);
+                }
+                throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+            }
+
+            let data = await response.json();
+            
+            if (schema) {
+                const parsed = schema.safeParse(data);
+                if (!parsed.success) {
+                    console.warn(`TMDB validation failed for ${endpoint}`, parsed.error);
+                    throw new Error(`TMDB validation failed: ${parsed.error.message}`);
+                }
+                data = parsed.data;
+            }
+
+            if (redis && options?.method !== 'POST') {
+                try {
+                    await redis.setex(cacheKey, 3600, data);
+                } catch (error) {
+                    console.warn("Redis cache write error", error);
+                }
+            }
+
+            return data;
+        } catch (error) {
+            if (retryCount < 3 && error instanceof Error && error.message.includes('fetch')) {
+                const waitTime = 1000 * (retryCount + 1);
+                console.warn(`TMDB Network error. Retrying in ${waitTime}ms...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+                return this.fetch<T>(endpoint, options, retryCount + 1, schema);
+            }
+            console.error(`TMDB fetch failed for ${endpoint}`, error);
+            throw error;
+        }
     }
 
     // Search

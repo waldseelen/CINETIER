@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -7,8 +7,8 @@ export async function GET(request: NextRequest) {
     const mediaType = searchParams.get("mediaType");
     const limit = parseInt(searchParams.get("limit") || "50");
 
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
 
     let query;
 
@@ -17,39 +17,13 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        query = supabase
-            .from("user_elo_ratings")
-            .select(`
-                media_id,
-                elo_rating,
-                match_count,
-                win_count,
-                media:media_id (
-                    tmdb_id,
-                    media_type,
-                    title,
-                    poster_path,
-                    year
-                )
+        query = Promise.resolve({ data: null, error: null }) /* Firebase Migration TODO */
             `)
             .eq("user_id", user.id)
             .order("elo_rating", { ascending: false })
             .limit(limit);
     } else {
-        query = supabase
-            .from("global_elo_ratings")
-            .select(`
-                media_id,
-                elo_rating,
-                match_count,
-                win_count,
-                media:media_id (
-                    tmdb_id,
-                    media_type,
-                    title,
-                    poster_path,
-                    year
-                )
+        query = Promise.resolve({ data: null, error: null }) /* Firebase Migration TODO */
             `)
             .order("elo_rating", { ascending: false })
             .limit(limit);

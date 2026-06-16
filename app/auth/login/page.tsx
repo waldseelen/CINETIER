@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
+import { auth } from "@/lib/firebase";
+import { signInWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, signInWithPopup } from "firebase/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2, Lock, Mail, Zap } from "lucide-react";
@@ -37,16 +38,11 @@ export default function LoginPage() {
         setIsLoading(true);
         setError(null);
 
-        const supabase = createClient();
-
-        const { error: authError } = await supabase.auth.signInWithPassword({
-            email: data.email,
-            password: data.password,
-        });
-
-        if (authError) {
+        try {
+            await signInWithEmailAndPassword(auth, data.email, data.password);
+        } catch (authError: any) {
             setError(
-                authError.message === "Invalid login credentials"
+                authError.code === "auth/invalid-credential"
                     ? "E-posta veya şifre hatalı"
                     : authError.message
             );
@@ -59,23 +55,25 @@ export default function LoginPage() {
     };
 
     const handleGoogleLogin = async () => {
-        const supabase = createClient();
-        await supabase.auth.signInWithOAuth({
-            provider: "google",
-            options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
-            },
-        });
+        const provider = new GoogleAuthProvider();
+        try {
+            await signInWithPopup(auth, provider);
+            router.push("/");
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const handleGithubLogin = async () => {
-        const supabase = createClient();
-        await supabase.auth.signInWithOAuth({
-            provider: "github",
-            options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
-            },
-        });
+        const provider = new GithubAuthProvider();
+        try {
+            await signInWithPopup(auth, provider);
+            router.push("/");
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     return (

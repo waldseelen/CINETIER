@@ -23,11 +23,15 @@ async function rateLimitedFetch<T>(url: string, retryCount = 0): Promise<T> {
     }
 
     lastRequestTime = Date.now();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
         const response = await fetch(url, {
             next: { revalidate: 3600 }, // Cache for 1 hour
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             if (response.status === 429) {
@@ -46,10 +50,11 @@ async function rateLimitedFetch<T>(url: string, retryCount = 0): Promise<T> {
 
         return response.json();
     } catch (error) {
-        if (retryCount < MAX_RETRIES && error instanceof Error && error.message.includes('fetch')) {
-            // Network error - retry
+        clearTimeout(timeoutId);
+        if (retryCount < MAX_RETRIES && error instanceof Error && (error.name === 'AbortError' || error.message.includes('fetch'))) {
+            // Network error or timeout - retry
             const waitTime = 1000 * (retryCount + 1);
-            console.warn(`🔄 Jikan network error, ${waitTime}ms sonra yeniden deneniyor...`);
+            console.warn(`🔄 Jikan network error/timeout, ${waitTime}ms sonra yeniden deneniyor...`);
             await new Promise(resolve => setTimeout(resolve, waitTime));
             return rateLimitedFetch(url, retryCount + 1);
         }
@@ -176,6 +181,8 @@ export interface JikanCharacter {
 // API Functions
 // ============================================
 
+import { tmdb } from '../tmdb/client';
+
 /**
  * Search anime by query
  */
@@ -191,9 +198,81 @@ export async function searchAnime(
         sfw: "true", // Safe for work filter
     });
 
-    return rateLimitedFetch<JikanSearchResponse>(
-        `${JIKAN_BASE_URL}/anime?${params}`
-    );
+    try {
+        return await rateLimitedFetch<JikanSearchResponse>(
+            `${JIKAN_BASE_URL}/anime?${params}`
+        );
+    } catch (error) {
+        console.warn("Jikan search failed, falling back to TMDB", error);
+        try {
+            const tmdbRes = await tmdb.searchTV(query, page);
+            const mappedData: JikanAnime[] = tmdbRes.results.map(tv => ({
+                mal_id: tv.id, // Using TMDB id as fallback
+                url: `https://www.themoviedb.org/tv/${tv.id}`,
+                images: {
+                    jpg: {
+                        image_url: tv.poster_path ? `https://image.tmdb.org/t/p/w500${tv.poster_path}` : '',
+                        small_image_url: tv.poster_path ? `https://image.tmdb.org/t/p/w185${tv.poster_path}` : '',
+                        large_image_url: tv.poster_path ? `https://image.tmdb.org/t/p/original${tv.poster_path}` : ''
+                    },
+                    webp: {
+                        image_url: tv.poster_path ? `https://image.tmdb.org/t/p/w500${tv.poster_path}` : '',
+                        small_image_url: tv.poster_path ? `https://image.tmdb.org/t/p/w185${tv.poster_path}` : '',
+                        large_image_url: tv.poster_path ? `https://image.tmdb.org/t/p/original${tv.poster_path}` : ''
+                    }
+                },
+                approved: true,
+                titles: [{ type: "Default", title: tv.name }],
+                title: tv.name,
+                title_english: tv.original_name,
+                title_japanese: null,
+                title_synonyms: [],
+                type: "TV",
+                source: "TMDB Fallback",
+                episodes: null,
+                status: "Currently Airing",
+                airing: false,
+                aired: {
+                    from: tv.first_air_date,
+                    to: null,
+                    prop: { from: { day: 1, month: 1, year: 2000 }, to: { day: 1, month: 1, year: 2000 } },
+                    string: tv.first_air_date
+                },
+                duration: "",
+                rating: null,
+                score: tv.vote_average,
+                scored_by: tv.vote_count,
+                rank: null,
+                popularity: tv.popularity,
+                members: 0,
+                favorites: 0,
+                synopsis: tv.overview,
+                background: null,
+                season: null,
+                year: tv.first_air_date ? parseInt(tv.first_air_date.substring(0, 4)) : null,
+                producers: [],
+                licensors: [],
+                studios: [],
+                genres: [],
+                explicit_genres: [],
+                themes: [],
+                demographics: []
+            }));
+
+            return {
+                pagination: {
+                    last_visible_page: tmdbRes.total_pages,
+                    has_next_page: page < tmdbRes.total_pages,
+                    current_page: tmdbRes.page,
+                    items: { count: mappedData.length, total: tmdbRes.total_results, per_page: limit }
+                },
+                data: mappedData
+            };
+        } catch (tmdbError) {
+            console.error("TMDB fallback also failed", tmdbError);
+            throw tmdbError;
+        }
+    }
 }
 
 /**

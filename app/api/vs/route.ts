@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+
 import { NextRequest, NextResponse } from "next/server";
 
 // Elo calculation constants
@@ -21,22 +21,13 @@ export async function GET(request: NextRequest) {
     const scope = searchParams.get("scope") || "global";
     const mediaType = searchParams.get("mediaType") || "movie";
 
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
 
     try {
         if (scope === "user" && user) {
             // Get from user's watched list
-            const { data: watchedMedia } = await supabase
-                .from("user_media_entries")
-                .select(`
-                    media:media_id (
-                        id,
-                        tmdb_id,
-                        media_type,
-                        title,
-                        poster_path
-                    )
+            const { data: watchedMedia } = { data: null, error: null } /* Firebase Migration TODO */
                 `)
                 .eq("user_id", user.id)
                 .eq("watched", true)
@@ -51,11 +42,7 @@ export async function GET(request: NextRequest) {
 
             // Get user's elo ratings
             const mediaIds = watchedMedia.map((w: any) => w.media.id);
-            const { data: eloData } = await supabase
-                .from("user_elo_ratings")
-                .select("*")
-                .eq("user_id", user.id)
-                .in("media_id", mediaIds);
+            const { data: eloData } = { data: null, error: null } /* Firebase Migration TODO */;
 
             const eloMap = new Map(eloData?.map((e: any) => [e.media_id, e.elo_rating]) || []);
 
@@ -79,12 +66,7 @@ export async function GET(request: NextRequest) {
             });
         } else {
             // Global matchup - get from popular media
-            const { data: media } = await supabase
-                .from("media")
-                .select("id, tmdb_id, media_type, title, poster_path")
-                .eq("media_type", mediaType)
-                .order("popularity", { ascending: false })
-                .limit(100);
+            const { data: media } = { data: null, error: null } /* Firebase Migration TODO */;
 
             if (!media || media.length < 2) {
                 return NextResponse.json({
@@ -95,10 +77,7 @@ export async function GET(request: NextRequest) {
 
             // Get global elo ratings
             const mediaIds = (media as any[]).map(m => m.id);
-            const { data: eloData } = await supabase
-                .from("global_elo_ratings")
-                .select("*")
-                .in("media_id", mediaIds);
+            const { data: eloData } = { data: null, error: null } /* Firebase Migration TODO */;
 
             const eloMap = new Map((eloData as any[])?.map(e => [e.media_id, e.elo_rating]) || []);
 
@@ -132,8 +111,8 @@ export async function GET(request: NextRequest) {
 
 // POST /api/vs - Record match result
 export async function POST(request: NextRequest) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -152,11 +131,7 @@ export async function POST(request: NextRequest) {
 
         if (scope === "user") {
             // User scope - update user_elo_ratings
-            const { data: existingElos } = await supabase
-                .from("user_elo_ratings")
-                .select("*")
-                .eq("user_id", user.id)
-                .in("media_id", [winnerId, loserId]);
+            const { data: existingElos } = { data: null, error: null } /* Firebase Migration TODO */;
 
             const existingElosArr = existingElos as any[] || [];
             const winnerElo = existingElosArr.find(e => e.media_id === winnerId)?.elo_rating || DEFAULT_ELO;
@@ -165,40 +140,17 @@ export async function POST(request: NextRequest) {
             const { newWinnerElo, newLoserElo } = calculateElo(winnerElo, loserElo);
 
             // Upsert winner elo
-            await supabase
-                .from("user_elo_ratings")
-                .upsert({
-                    user_id: user.id,
-                    media_id: winnerId,
-                    elo_rating: newWinnerElo,
-                    match_count: (existingElosArr.find(e => e.media_id === winnerId)?.match_count || 0) + 1,
+            { data: null, error: null } /* Firebase Migration TODO */?.match_count || 0) + 1,
                     win_count: (existingElosArr.find(e => e.media_id === winnerId)?.win_count || 0) + 1,
                 } as any, { onConflict: "user_id,media_id" });
 
             // Upsert loser elo
-            await supabase
-                .from("user_elo_ratings")
-                .upsert({
-                    user_id: user.id,
-                    media_id: loserId,
-                    elo_rating: newLoserElo,
-                    match_count: (existingElosArr.find(e => e.media_id === loserId)?.match_count || 0) + 1,
+            { data: null, error: null } /* Firebase Migration TODO */?.match_count || 0) + 1,
                     win_count: existingElosArr.find(e => e.media_id === loserId)?.win_count || 0,
                 } as any, { onConflict: "user_id,media_id" });
 
             // Record match
-            await supabase
-                .from("vs_matches")
-                .insert({
-                    user_id: user.id,
-                    winner_media_id: winnerId,
-                    loser_media_id: loserId,
-                    scope: "user",
-                    winner_elo_before: winnerElo,
-                    loser_elo_before: loserElo,
-                    winner_elo_after: newWinnerElo,
-                    loser_elo_after: newLoserElo,
-                } as any);
+            { data: null, error: null } /* Firebase Migration TODO */;
 
             return NextResponse.json({
                 success: true,
@@ -207,10 +159,7 @@ export async function POST(request: NextRequest) {
             });
         } else {
             // Global scope
-            const { data: existingElos } = await supabase
-                .from("global_elo_ratings")
-                .select("*")
-                .in("media_id", [winnerId, loserId]);
+            const { data: existingElos } = { data: null, error: null } /* Firebase Migration TODO */;
 
             const existingElosArr = existingElos as any[] || [];
             const winnerElo = existingElosArr.find(e => e.media_id === winnerId)?.elo_rating || DEFAULT_ELO;
@@ -219,38 +168,17 @@ export async function POST(request: NextRequest) {
             const { newWinnerElo, newLoserElo } = calculateElo(winnerElo, loserElo);
 
             // Upsert winner elo
-            await supabase
-                .from("global_elo_ratings")
-                .upsert({
-                    media_id: winnerId,
-                    elo_rating: newWinnerElo,
-                    match_count: (existingElosArr.find(e => e.media_id === winnerId)?.match_count || 0) + 1,
+            { data: null, error: null } /* Firebase Migration TODO */?.match_count || 0) + 1,
                     win_count: (existingElosArr.find(e => e.media_id === winnerId)?.win_count || 0) + 1,
                 } as any, { onConflict: "media_id" });
 
             // Upsert loser elo
-            await supabase
-                .from("global_elo_ratings")
-                .upsert({
-                    media_id: loserId,
-                    elo_rating: newLoserElo,
-                    match_count: (existingElosArr.find(e => e.media_id === loserId)?.match_count || 0) + 1,
+            { data: null, error: null } /* Firebase Migration TODO */?.match_count || 0) + 1,
                     win_count: existingElosArr.find(e => e.media_id === loserId)?.win_count || 0,
                 } as any, { onConflict: "media_id" });
 
             // Record match
-            await supabase
-                .from("vs_matches")
-                .insert({
-                    user_id: user.id,
-                    winner_media_id: winnerId,
-                    loser_media_id: loserId,
-                    scope: "global",
-                    winner_elo_before: winnerElo,
-                    loser_elo_before: loserElo,
-                    winner_elo_after: newWinnerElo,
-                    loser_elo_after: newLoserElo,
-                } as any);
+            { data: null, error: null } /* Firebase Migration TODO */;
 
             return NextResponse.json({
                 success: true,

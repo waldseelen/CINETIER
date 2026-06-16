@@ -99,3 +99,33 @@ export type CommentInput = z.infer<typeof commentSchema>;
 export type ReportInput = z.infer<typeof reportSchema>;
 export type ProfileSettingsInput = z.infer<typeof profileSettingsSchema>;
 export type VSMatchInput = z.infer<typeof vsMatchSchema>;
+
+// API Response Schemas for Validation
+export const tmdbBaseSchema = z.object({
+    id: z.number(),
+    title: z.string().optional(),
+    name: z.string().optional(),
+}).passthrough();
+
+export const tmdbSearchResponseSchema = z.object({
+    page: z.number(),
+    total_pages: z.number(),
+    total_results: z.number(),
+    results: z.array(tmdbBaseSchema),
+}).passthrough();
+
+export const jikanAnimeSchema = z.object({
+    mal_id: z.number(),
+    title: z.string(),
+    images: z.any().optional(),
+}).passthrough();
+
+export const jikanSearchResponseSchema = z.object({
+    data: z.array(jikanAnimeSchema),
+    pagination: z.any().optional(),
+}).passthrough();
+
+export const omdbResponseSchema = z.object({
+    Response: z.enum(["True", "False"]),
+    Error: z.string().optional(),
+}).passthrough();

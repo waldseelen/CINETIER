@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useLikeTierList, useTierListBySlug, useUser } from "@/lib/hooks/use-queries";
-import { createClient } from "@/lib/supabase/client";
+
 import { getPosterUrl } from "@/lib/tmdb";
 import { formatDistanceToNow } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -59,19 +59,8 @@ export default function TierListPage({ params }: TierListPageProps) {
         if (!tierList?.id) return;
 
         const fetchComments = async () => {
-            const supabase = createClient();
-            const { data } = await supabase
-                .from("comments")
-                .select(`
-                    id,
-                    content,
-                    created_at,
-                    user_id,
-                    profiles:user_id (
-                        username,
-                        display_name,
-                        avatar_url
-                    )
+            
+            const { data } = { data: null, error: null } /* Firebase Migration TODO */
                 `)
                 .eq("target_type", "tier_list")
                 .eq("target_id", tierList.id)
@@ -83,13 +72,8 @@ export default function TierListPage({ params }: TierListPageProps) {
 
         const checkLiked = async () => {
             if (!currentUser) return;
-            const supabase = createClient();
-            const { data } = await supabase
-                .from("tier_list_likes")
-                .select("id")
-                .eq("tier_list_id", tierList.id)
-                .eq("user_id", currentUser.id)
-                .single();
+            
+            const { data } = { data: null, error: null } /* Firebase Migration TODO */;
             setIsLiked(!!data);
         };
 
@@ -108,15 +92,9 @@ export default function TierListPage({ params }: TierListPageProps) {
         if (!newComment.trim() || !tierList?.id || !currentUser) return;
 
         setSubmittingComment(true);
-        const supabase = createClient();
+        
 
-        const { data, error } = await supabase
-            .from("comments")
-            .insert({
-                user_id: currentUser.id,
-                target_type: "tier_list",
-                tier_list_id: tierList.id,
-                body: newComment.trim(),
+        const { data, error } = { data: null, error: null } /* Firebase Migration TODO */,
             } as any)
             .select(`
                 id,

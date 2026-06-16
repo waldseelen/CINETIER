@@ -1,5 +1,8 @@
 import { mapJikanToSearchResult, searchAnime } from "@/lib/jikan";
+import type { JikanSearchResponse, JikanAnime } from "@/lib/jikan/client";
 import { tmdb } from "@/lib/tmdb/client";
+import type { TMDBSearchResponse } from "@/lib/tmdb/client";
+import { tmdbSearchResponseSchema, jikanSearchResponseSchema } from "@/lib/validators/schemas";
 import { NextRequest, NextResponse } from "next/server";
 
 interface UnifiedSearchResult {
@@ -50,16 +53,22 @@ export async function GET(request: NextRequest) {
         // Parallel fetch from both sources
         const [tmdbResult, animeResult] = await Promise.all([
             searchMoviesTV
-                ? tmdb.searchMulti(normalizedQuery, page)
-                : Promise.resolve({ results: [], page: 1, total_pages: 0, total_results: 0 }),
+                ? tmdb.searchMulti(normalizedQuery, page).catch(() => null)
+                : Promise.resolve(null),
             searchAnimeContent
-                ? searchAnime(normalizedQuery, page, 15)
-                : Promise.resolve({ data: [], pagination: { current_page: 1, has_next_page: false, last_visible_page: 1, items: { count: 0, total: 0, per_page: 25 } } }),
+                ? searchAnime(normalizedQuery, page, 15).catch(() => null)
+                : Promise.resolve(null),
         ]);
+
+        const parsedTmdb = tmdbResult ? tmdbSearchResponseSchema.safeParse(tmdbResult) : null;
+        const validTmdbResult = parsedTmdb?.success ? (parsedTmdb.data as unknown as TMDBSearchResponse) : { results: [], page: 1, total_pages: 0, total_results: 0 };
+
+        const parsedAnime = animeResult ? jikanSearchResponseSchema.safeParse(animeResult) : null;
+        const validAnimeResult = parsedAnime?.success ? (parsedAnime.data as unknown as JikanSearchResponse) : { data: [], pagination: { current_page: 1, has_next_page: false, last_visible_page: 1, items: { count: 0, total: 0, per_page: 25 } } };
 
         // Map TMDB results
         if (searchMoviesTV) {
-            for (const item of tmdbResult.results) {
+            for (const item of validTmdbResult.results) {
                 // Skip person results unless specifically requested
                 if ("media_type" in item && item.media_type === "person") {
                     continue;
@@ -91,7 +100,7 @@ export async function GET(request: NextRequest) {
 
         // Map Jikan results
         if (searchAnimeContent) {
-            for (const anime of animeResult.data) {
+            for (const anime of validAnimeResult.data) {
                 const mapped = mapJikanToSearchResult(anime);
                 results.push({
                     id: mapped.malId,
@@ -127,8 +136,8 @@ export async function GET(request: NextRequest) {
             data: results,
             pagination: {
                 page,
-                totalPages: Math.max(tmdbResult.total_pages, animeResult.pagination.last_visible_page),
-                hasMore: tmdbResult.total_pages > page || animeResult.pagination.has_next_page,
+                totalPages: Math.max(validTmdbResult.total_pages, validAnimeResult.pagination.last_visible_page),
+                hasMore: validTmdbResult.total_pages > page || validAnimeResult.pagination.has_next_page,
             },
         });
     } catch (error) {

@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -13,19 +13,7 @@ export async function GET(request: NextRequest) {
     const unreadOnly = searchParams.get("unread") === "true";
     const limit = parseInt(searchParams.get("limit") || "20");
 
-    let query = supabase
-        .from("notifications")
-        .select(`
-            id,
-            type,
-            read,
-            created_at,
-            message,
-            actor:actor_id (
-                username,
-                display_name,
-                avatar_url
-            ),
+    let query = Promise.resolve({ data: null, error: null }) /* Firebase Migration TODO */,
             tier_list:tier_list_id (
                 id,
                 title,
@@ -56,11 +44,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get unread count
-    const { count } = await supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("read", false);
+    const { count } = { data: null, error: null } /* Firebase Migration TODO */;
 
     return NextResponse.json({
         notifications: data || [],
@@ -70,8 +54,8 @@ export async function GET(request: NextRequest) {
 
 // Mark notifications as read
 export async function PATCH(request: NextRequest) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -81,7 +65,7 @@ export async function PATCH(request: NextRequest) {
     const { notificationIds, markAll } = body;
 
     if (markAll) {
-        const { error } = await (supabase
+        const { error } = await (/* supabase reference */ null
             .from("notifications") as any)
             .update({ read: true })
             .eq("user_id", user.id)
@@ -91,7 +75,7 @@ export async function PATCH(request: NextRequest) {
             return NextResponse.json({ error: "Failed to mark notifications" }, { status: 500 });
         }
     } else if (notificationIds && notificationIds.length > 0) {
-        const { error } = await (supabase
+        const { error } = await (/* supabase reference */ null
             .from("notifications") as any)
             .update({ read: true })
             .eq("user_id", user.id)

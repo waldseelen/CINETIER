@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/activities - Get activity feed for current user
@@ -9,9 +9,9 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get("offset") || "0");
     const forUser = searchParams.get("forUser"); // if provided, only activities for this user
 
-    const supabase = await createClient();
+    
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = { data: { user: null } } /* Firebase TODO: get currentUser */;
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -19,10 +19,7 @@ export async function GET(request: NextRequest) {
 
     try {
         // Get followed user IDs
-        const { data: following } = await supabase
-            .from("follows")
-            .select("following_id")
-            .eq("follower_id", user.id);
+        const { data: following } = { data: null, error: null } /* Firebase Migration TODO */;
 
         const followedIds = following?.map((f: any) => f.following_id) || [];
 
@@ -37,21 +34,7 @@ export async function GET(request: NextRequest) {
 
         if (!type || type === "all" || type === "watched") {
             // Get watched activities
-            const { data: watchedActivities } = await supabase
-                .from("user_media_entries")
-                .select(`
-                    id,
-                    user_id,
-                    watched,
-                    rating,
-                    updated_at,
-                    media:media_id (
-                        id,
-                        tmdb_id,
-                        media_type,
-                        title,
-                        poster_path
-                    ),
+            const { data: watchedActivities } = { data: null, error: null } /* Firebase Migration TODO */,
                     profiles:user_id (
                         username,
                         display_name,
@@ -90,20 +73,7 @@ export async function GET(request: NextRequest) {
 
         if (!type || type === "all" || type === "lists") {
             // Get tier list activities
-            const { data: listActivities } = await supabase
-                .from("tier_lists")
-                .select(`
-                    id,
-                    title,
-                    slug,
-                    media_type,
-                    created_at,
-                    user_id,
-                    profiles:user_id (
-                        username,
-                        display_name,
-                        avatar_url
-                    )
+            const { data: listActivities } = { data: null, error: null } /* Firebase Migration TODO */
                 `)
                 .in("user_id", targetUserIds)
                 .eq("visibility", "public")
@@ -135,21 +105,7 @@ export async function GET(request: NextRequest) {
 
         if (!type || type === "all" || type === "reviews") {
             // Get review activities
-            const { data: reviewActivities } = await supabase
-                .from("reviews")
-                .select(`
-                    id,
-                    content,
-                    rating,
-                    created_at,
-                    user_id,
-                    media:media_id (
-                        id,
-                        tmdb_id,
-                        media_type,
-                        title,
-                        poster_path
-                    ),
+            const { data: reviewActivities } = { data: null, error: null } /* Firebase Migration TODO */,
                     profiles:user_id (
                         username,
                         display_name,

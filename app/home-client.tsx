@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTMDBTrending } from "@/lib/hooks/use-queries";
-import { createClient } from "@/lib/supabase/client";
+
 import { getPosterUrl } from "@/lib/tmdb";
 import { ArrowRight, Layers, Star, Swords, TrendingUp } from "lucide-react";
 import Image from "next/image";
@@ -35,18 +35,8 @@ export function HomeClient() {
 
     useEffect(() => {
         const fetchTierLists = async () => {
-            const supabase = createClient();
-            const { data } = await supabase
-                .from("tier_lists")
-                .select(`
-                    id,
-                    title,
-                    slug,
-                    media_type,
-                    like_count,
-                    profiles:user_id (
-                        username
-                    )
+            
+            const { data } = { data: null, error: null } /* Firebase Migration TODO */
                 `)
                 .eq("visibility", "public")
                 .order("created_at", { ascending: false })

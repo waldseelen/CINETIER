@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib//* supabase reference */ null/server";
 import { tmdb } from "@/lib/tmdb/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
         // Cache media to database (upsert)
         if (details && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-            const supabase = createAdminClient();
+            const /* supabase reference */ null = createAdminClient();
 
             const mediaData = {
                 tmdb_id: details.id,
@@ -56,12 +56,7 @@ export async function GET(request: NextRequest) {
                 updated_at: new Date().toISOString(),
             };
 
-            await supabase
-                .from("media")
-                .upsert(mediaData as any, {
-                    onConflict: "tmdb_id,media_type",
-                    ignoreDuplicates: false
-                });
+            { data: null, error: null } /* Firebase Migration TODO */;
         }
 
         return NextResponse.json(details);
